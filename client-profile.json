@@ -1,0 +1,16 @@
+{
+  "clientName": "default-pilot",
+  "framework": "playwright",
+  "language": "typescript",
+  "artifactStyle": "gherkin-plus-executable-ts",
+  "testDataStyle": "synthetic",
+  "reporting": {
+    "junit": true,
+    "playwrightHtml": true,
+    "playwrightJson": true
+  },
+  "healingPolicy": {
+    "mode": "human-in-the-loop",
+    "gitStrategy": "feature-branch"
+  }
+}
