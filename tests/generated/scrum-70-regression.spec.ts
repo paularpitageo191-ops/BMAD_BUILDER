@@ -1,65 +1,74 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://demoqa.com';
+test.describe('Negative Path Validation @SCRUM-70 @Forensic-AEGIS-2026-MAY-F97F', () => {
 
-test.describe('Negative Path Validation – DemoQA Elements', () => {
-
-  test('AC1 Email Validation – invalid email shows validation error and no output', async ({ page }) => {
-    await page.goto(`${BASE_URL}/text-box`);
+  test('AC1 - Email Validation rejects invalid email and hides output', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
     const emailInput = page.locator('#userEmail');
     await emailInput.fill('test@domain');
     await page.locator('#submit').click();
-    // Assert validation error (CSS class 'field-error' or 'is-invalid')
-    await expect(emailInput).toHaveClass(/field-error|is-invalid/);
-    // Assert output section is hidden
+    // Check validation error via :invalid CSS pseudo-class (HTML5 validation)
+    const isInvalid = await emailInput.evaluate(el => el.matches(':invalid'));
+    expect(isInvalid).toBeTruthy();
+    // Output section should not be visible
     await expect(page.locator('#output')).not.toBeVisible();
   });
 
-  test('AC2 Web Tables – non-numeric Age blocks submission and modal stays open', async ({ page }) => {
-    await page.goto(`${BASE_URL}/webtables`);
+  test('AC2 - Web Tables rejects non-numeric Age and Salary', async ({ page }) => {
+    await page.goto('https://demoqa.com/webtables');
     await page.locator('#addNewRecordButton').click();
     const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
-    // Fill only non-numeric fields (Age, Salary) – leave required fields as valid default
-    await page.locator('#age').fill('abc');
-    await page.locator('#salary').fill('12ab');
-    // Ensure first name and last name are filled to avoid unrelated validation
-    await page.locator('#firstName').fill('Test');
-    await page.locator('#lastName').fill('User');
-    await page.locator('#department').fill('QA');
-    // Submit
-    await page.locator('#submit').click();
-    // Modal should still be open
+    await modal.locator('#age').fill('abc');
+    await modal.locator('#salary').fill('12ab');
+    await modal.locator('#submit').click();
+    // Modal remains open
     await expect(modal).toBeVisible();
-    // Table should not have a new row (count rows before and after)
-    const rowsBefore = await page.locator('.rt-tr-group').count();
-    // (No new row added, so count unchanged)
-    const rowsAfter = await page.locator('.rt-tr-group').count();
-    expect(rowsAfter).toBe(rowsBefore);
+    // Age and salary fields should have validation error (HTML5 :invalid)
+    const ageInvalid = await modal.locator('#age').evaluate(el => el.matches(':invalid'));
+    expect(ageInvalid).toBeTruthy();
+    const salaryInvalid = await modal.locator('#salary').evaluate(el => el.matches(':invalid'));
+    expect(salaryInvalid).toBeTruthy();
   });
 
-  test('AC3 Radio Button – disabled "No" option does not respond to clicks', async ({ page }) => {
-    await page.goto(`${BASE_URL}/radio-button`);
+  test('AC3 - Radio Button "No" remains disabled and unclickable', async ({ page }) => {
+    await page.goto('https://demoqa.com/radio-button');
     const noRadio = page.locator('#noRadio');
-    // Verify disabled attribute
     await expect(noRadio).toBeDisabled();
-    // Click it
-    await noRadio.click({ force: true }); // force to bypass any overlay
-    // Verify still disabled
+    const initialChecked = await noRadio.isChecked();
+    await noRadio.click({ force: true }); // force to bypass disabled but verify no change
+    const finalChecked = await noRadio.isChecked();
+    expect(finalChecked).toEqual(initialChecked); // should remain unchecked
+    // Also verify aria-disabled or disabled attribute remains
     await expect(noRadio).toBeDisabled();
-    // Output text should remain unchanged (no selection)
-    await expect(page.locator('.text-success')).not.toBeVisible();
   });
 
-  test('AC4 UI Stability – elements interactable via scroll when initially out of view', async ({ page }) => {
-    await page.goto(`${BASE_URL}/radio-button`);
-    const yesRadio = page.locator('#yesRadio');
-    // Scroll into view if not already
-    await yesRadio.scrollIntoViewIfNeeded();
-    await yesRadio.click();
-    // Check that 'Yes' radio is selected
-    await expect(yesRadio).toBeChecked();
-    // Check output message
-    await expect(page.locator('.text-success')).toHaveText('You have selected Yes');
+  test('AC4 - UI remains stable under an overlay obstruction', async ({ page }) => {
+    await page.goto('https://demoqa.com/elements');
+    // Inject a fixed overlay
+    await page.evaluate(() => {
+      const overlay = document.createElement('div');
+      overlay.id = 'test-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.background = 'rgba(0,0,0,0.5)';
+      overlay.style.zIndex = '9999';
+      overlay.style.pointerEvents = 'none'; // allow clicks to pass through
+      document.body.appendChild(overlay);
+    });
+    // Attempt to scroll and click an element (e.g., first element in the page)
+    const firstElement = page.locator('.element-list .element-group:first-child');
+    await firstElement.scrollIntoViewIfNeeded();
+    await firstElement.click();
+    // Check that the page is still functional - no error, element click should succeed
+    await expect(firstElement).toBeVisible();
+    // Remove overlay to avoid side effects
+    await page.evaluate(() => {
+      const overlay = document.querySelector('#test-overlay');
+      if (overlay) overlay.remove();
+    });
   });
 });

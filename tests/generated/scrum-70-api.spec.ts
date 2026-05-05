@@ -1,88 +1,92 @@
 import { test, expect } from '@playwright/test';
 
-const TEXT_BOX_URL = 'https://demoqa.com/text-box';
-const WEB_TABLES_URL = 'https://demoqa.com/webtables';
-const RADIO_BUTTON_URL = 'https://demoqa.com/radio-button';
-const ELEMENTS_URL = 'https://demoqa.com/elements';
+test.use({ baseURL: 'https://demoqa.com' });
 
-test.describe('SCRUM-70: Negative Path Validation for DemoQA Elements Module', () => {
+test.describe('Elements Module Negative Path Validation - SCRUM-70', () => {
 
-  test('AC1 – Email Validation – Invalid email shows validation error and no output', async ({ page }) => {
-    await page.goto(TEXT_BOX_URL);
-    await page.waitForLoadState('networkidle');
-
-    // Enter invalid email (missing TLD)
-    const emailInput = page.locator('#userEmail');
-    await emailInput.fill('test@domain');
-
-    // Click Submit
-    await page.locator('#submit').click();
-
-    // Assert validation error on email field
-    // HTML5 validation makes the input:invalid; check that input matches :invalid state
-    await expect(emailInput).toHaveAttribute('aria-invalid', 'true');
-    // Also verify that browser validation is triggered (input validation message is shown)
-    // We can check that the form is not submitted and output section is not displayed
-    const outputSection = page.locator('#output');
-    await expect(outputSection).not.toBeVisible();
+  test.beforeEach(async ({ page }) => {
+    // Navigate to the main Elements page (Text Box page for AC1/AC4, but we navigate per test)
+    await page.goto('/text-box');
   });
 
-  test('AC2 – Web Tables Validation – Non-numeric Age/Salary blocks submission', async ({ page }) => {
-    await page.goto(WEB_TABLES_URL);
-    await page.waitForLoadState('networkidle');
+  test('AC1 - Invalid email triggers validation error and no output', async ({ page }) => {
+    // Fill in a valid name and address to satisfy required fields? The form has no mandatory fields besides email? Based on screenshots, we fill all fields.
+    await page.fill('#userName', 'TestUser');
+    await page.fill('#userEmail', 'test@domain');
+    await page.fill('#currentAddress', '123 Street');
+    await page.fill('#permanentAddress', '456 Avenue');
+    await page.click('#submit');
 
-    // Click Add button to open registration modal
-    await page.locator('#addNewRecordButton').click();
-    const modal = page.locator('.modal-content'); // or more specific selector
+    // Validate error on email field
+    const emailInput = page.locator('#userEmail');
+    await expect(emailInput).toHaveClass(/field-error|error/); // common validation class
+    // Check that output section is not displayed (hidden or not present)
+    await expect(page.locator('#output')).toBeHidden();
+  });
+
+  test('AC2 - Non-numeric age blocks submission and modal stays open', async ({ page }) => {
+    // Navigate to Web Tables page
+    await page.goto('/webtables');
+    // Click "Add" button to open registration modal
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
 
-    // Fill non-numeric values in Age and Salary fields
-    // Assume Age field has id 'age' and Salary has 'salary' in the modal form
-    await page.locator('#age').fill('abc');
-    await page.locator('#salary').fill('12ab');
+    // Fill required fields with valid data except age
+    await page.fill('#firstName', 'John');
+    await page.fill('#lastName', 'Doe');
+    await page.fill('#userEmail', 'john@example.com');
+    await page.fill('#age', 'abc');               // invalid
+    await page.fill('#salary', '50000');
+    await page.fill('#department', 'Engineering');
 
-    // Click Submit button inside the modal (assume id 'submit' or text 'Submit')
-    await page.locator('button:has-text("Submit")').click();
+    // Submit via the modal submit button
+    await page.click('#submit');
 
-    // Assert modal is still open (submission blocked)
+    // Modal should remain open
     await expect(modal).toBeVisible();
-    // Optionally, check that validation messages appear (browser default validation)
-    // We can assert that the input fields still have their invalid values
+    // Age field should still contain the invalid value
     await expect(page.locator('#age')).toHaveValue('abc');
+  });
+
+  test('AC2 - Non-numeric salary blocks submission and modal stays open', async ({ page }) => {
+    await page.goto('/webtables');
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content');
+    await expect(modal).toBeVisible();
+
+    // Fill with valid data except salary
+    await page.fill('#firstName', 'Jane');
+    await page.fill('#lastName', 'Smith');
+    await page.fill('#userEmail', 'jane@example.com');
+    await page.fill('#age', '30');
+    await page.fill('#salary', '12ab');           // invalid
+    await page.fill('#department', 'Finance');
+
+    await page.click('#submit');
+
+    await expect(modal).toBeVisible();
     await expect(page.locator('#salary')).toHaveValue('12ab');
   });
 
-  test('AC3 – Radio Button Validation – Disabled "No" option remains unclickable', async ({ page }) => {
-    await page.goto(RADIO_BUTTON_URL);
-    await page.waitForLoadState('networkidle');
-
-    // Locate the disabled "No" radio button
+  test('AC3 - "No" radio button remains disabled and click does not change state', async ({ page }) => {
+    await page.goto('/radio-button');
     const noRadio = page.locator('#noRadio');
-
-    // Assert it is disabled
+    // Verify it is disabled
     await expect(noRadio).toBeDisabled();
-
-    // Attempt to click it (Playwright will refuse to click a disabled element by default)
-    // We can try via JS to simulate a forced click, but the requirement is that clicking does nothing
-    // Instead, verify state remains unchanged (no checked property)
-    await noRadio.dispatchEvent('click'); // This will fail if not allowed? Actually dispatchEvent ignores disabled; use force: true
-    // To strictly test: try clicking with force and verify no checked change
-    try {
-      await noRadio.click({ force: true });
-    } catch (e) {
-      // If click on disabled throws, we can still check state
-    }
-
-    // After any attempted click, the radio should still be disabled and not checked
+    // Click it – should do nothing
+    await noRadio.click({ force: true });
+    // Still disabled
     await expect(noRadio).toBeDisabled();
+    // Verify no visual change: the "No" label should not have any selected class
+    // The demoqa radio buttons typically have a 'custom-control-input' and label. But we check the input itself is not checked.
     await expect(noRadio).not.toBeChecked();
   });
 
-  test('AC4 – UI Stability – Overlay does not break element interactability', async ({ page }) => {
-    await page.goto(TEXT_BOX_URL); // Use any elements page
-    await page.waitForLoadState('networkidle');
-
-    // Simulate an overlay covering the page
+  test('AC4 - UI remains stable under overlay obstruction', async ({ page }) => {
+    // Navigate to Text Box page
+    await page.goto('/text-box');
+    // Inject a semi-transparent overlay that partially covers the form
     await page.evaluate(() => {
       const overlay = document.createElement('div');
       overlay.id = 'test-overlay';
@@ -90,24 +94,30 @@ test.describe('SCRUM-70: Negative Path Validation for DemoQA Elements Module', (
       overlay.style.top = '0';
       overlay.style.left = '0';
       overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      overlay.style.height = '50%';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.3)';
       overlay.style.zIndex = '9999';
-      overlay.style.pointerEvents = 'auto'; // block clicks
       document.body.appendChild(overlay);
     });
 
-    // Verify that we can still interact with elements via scroll/visibility handling
-    // For example, scroll to a button and click it programmatically (force click)
-    const submitButton = page.locator('#submit');
-    await submitButton.scrollIntoViewIfNeeded();
-
-    // Use force:true to bypass overlay obstruction (simulating user who dismisses overlay)
-    await submitButton.click({ force: true });
-
-    // After clicking (even if validation fails), ensure the page does not crash
-    // We can check that no JS error occurred, and the page is still functional
+    // Attempt to interact with the email field
     const emailInput = page.locator('#userEmail');
-    await expect(emailInput).toBeVisible();
+    await emailInput.scrollIntoViewIfNeeded();
+    await emailInput.click();
+    await emailInput.fill('test@demoqa.com');
+
+    // Verify the value was entered successfully
+    await expect(emailInput).toHaveValue('test@demoqa.com');
+    // Check no unexpected console errors (we can listen for errors)
+    page.on('pageerror', (err) => {
+      test.fail(true, `Unexpected page error: ${err.message}`);
+    });
+    // Also check that the output section can be displayed with valid input later (optional)
+    await page.fill('#userName', 'User');
+    await page.fill('#userEmail', 'valid@example.com');
+    await page.fill('#currentAddress', 'Addr');
+    await page.fill('#permanentAddress', 'Addr2');
+    await page.click('#submit');
+    await expect(page.locator('#output')).toBeVisible();
   });
 });
