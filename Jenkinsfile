@@ -8,6 +8,8 @@ pipeline {
 
   parameters {
     string(name: 'RUNNER_BRANCH', defaultValue: 'main', description: 'Git branch to execute for the generated test suite')
+    string(name: 'RUNNER_SPEC', defaultValue: '', description: 'Optional Playwright spec path for targeted reruns')
+    string(name: 'RUNNER_GREP', defaultValue: '', description: 'Optional Playwright grep filter for targeted reruns')
   }
 
   environment {
@@ -53,7 +55,18 @@ pipeline {
     stage('Run Generated Tests') {
       steps {
         script {
-          def testExit = sh(script: 'npm test', returnStatus: true)
+          def specPath = (params.RUNNER_SPEC ?: '').trim()
+          def grepFilter = (params.RUNNER_GREP ?: '').trim()
+          def escapedSpec = specPath.replace("'", "'\"'\"'")
+          def escapedGrep = grepFilter.replace("'", "'\"'\"'")
+          def testCmd = 'npx playwright test'
+          if (escapedSpec) {
+            testCmd += " '${escapedSpec}'"
+          }
+          if (escapedGrep) {
+            testCmd += " --grep '${escapedGrep}'"
+          }
+          def testExit = sh(script: testCmd, returnStatus: true)
           env.PLAYWRIGHT_EXIT = "${testExit}"
           if (testExit != 0 && !fileExists('test-results/junit.xml')) {
             error("Playwright execution failed before JUnit results were produced.")
