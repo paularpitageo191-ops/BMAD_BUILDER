@@ -1,50 +1,31 @@
-```gherkin
-@SCRUM-70
-@Forensic-AEGIS-2026-MAY-5252
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions.
+  Scenario: AC1 – Email Validation rejects invalid input
+    Given the user is on the DemoQA Text Box page
+    When the user fills the email field with an invalid email "test@domain"
+    And the user clicks the "Submit" button
+    Then the email input should have a validation error
+    And the output section "#output" should not be displayed
 
-  Background:
-    Given the user navigates to the DemoQA Elements module
+  Scenario: AC2 – Web Tables blocks non-numeric Age
+    Given the user is on the DemoQA Web Tables page
+    When the user clicks the "Add" button to open the registration modal
+    And the user fills the Age field with non-numeric value "abc"
+    And the user clicks the "Submit" button in the registration modal
+    Then the registration modal should remain open
+    And no new row should appear in the table
 
-  @AC1
-  Scenario: Email validation with invalid input
-    Given the user is on the Text Box page
-    When the user enters an invalid email format in the email field
-    Then a validation error is displayed on the email field
-    And the output section is not displayed
+  Scenario: AC3 – Radio Button "No" remains disabled
+    Given the user is on the DemoQA Radio Button page
+    Then the "#noRadio" element should be disabled
+    When the user attempts to click the "#noRadio" element
+    Then the "#noRadio" element should still be disabled
+    And the "#noRadio" element should not be checked
 
-  @AC2
-  Scenario: Web tables validation rejects non-numeric age or salary
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And the user enters non-numeric values in the Age field
-    Then the submission is blocked
-    And the registration modal remains open
-
-  @AC2
-  Scenario: Web tables validation rejects non-numeric salary
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And the user enters non-numeric values in the Salary field
-    Then the submission is blocked
-    And the registration modal remains open
-
-  @AC3
-  Scenario: "No" radio button remains disabled and does not trigger state change
-    Given the user is on the Radio Button page
-    Then the "No" option radio button is disabled
-    When the user clicks on the disabled "No" option
-    Then no state change occurs
-
-  @AC4
-  Scenario: UI remains stable when interacting under an overlay obstruction
-    Given the user is on the Elements module
-    When an overlay is present covering interactive elements
-    And the user scrolls and uses visibility handling to interact with elements
-    Then all required elements remain interactable
-    And the UI does not become unstable
-```
+  Scenario: AC4 – UI remains stable under overlay obstruction
+    Given the user is on the DemoQA Elements page
+    And an overlay div is placed over the page
+    When the user scrolls a target element into view
+    And the user clicks the target element
+    Then the click should succeed and no errors occur

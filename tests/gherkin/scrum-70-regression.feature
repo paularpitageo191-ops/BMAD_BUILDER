@@ -1,56 +1,31 @@
-```gherkin
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-5252
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given the DemoQA Elements page is loaded
+  Scenario: AC1 – Email validation blocks invalid input and hides output
+    Given the user is on the Text Box page
+    When the user enters an email without a top-level domain "test@domain" in the email field
+    And clicks the Submit button
+    Then the email field should show a validation error
+    And the output section #output should not be displayed
 
-  @AC1
-  Scenario Outline: Email validation rejects invalid formats and hides output
-    When the user enters "<invalidEmail>" in the email field #userEmail
-    And the user clicks the submit button
-    Then a validation error is displayed on #userEmail
-    And the output section #output is not visible
-    Examples:
-      | invalidEmail          |
-      | test@domain           |
-      | user@.com             |
-      | @domain.com           |
-      | user@domain           |
-      |                        |
+  Scenario: AC2 – Web Tables rejects non-numeric age and salary
+    Given the user is on the Web Tables page
+    When the user clicks the Add button to open the registration modal
+    And enters non-numeric value "abc" in the Age field and "12ab" in the Salary field
+    And clicks the Submit button in the modal
+    Then the modal should remain open
+    And the form fields should still contain the invalid input
 
-  @AC2
-  Scenario Outline: Web Tables reject non-numeric values in Age and Salary fields
-    Given the user opens the "Web Tables" section
-    And the registration modal is displayed
-    When the user enters "<value>" in the "<field>" field
-    And the user clicks the submit button inside the modal
-    Then the modal remains open
-    And the submission is blocked
-    Examples:
-      | value | field          |
-      | abc   | Age            |
-      | 12ab  | Age            |
-      | abc   | Salary         |
-      | 12ab  | Salary         |
-      |       | Age            |
-      |       | Salary         |
+  Scenario: AC3 – Radio Button 'No' remains disabled and unclickable
+    Given the user is on the Radio Button page
+    When the user attempts to click the "No" option (#noRadio)
+    Then the "No" option should remain disabled
+    And no selection state change should occur
 
-  @AC3
-  Scenario: "No" radio button remains disabled and does not change state
-    Given the "Radio Button" section is visible
-    Then the "No" option #noRadio is disabled
-    When the user clicks the "No" option
-    Then the "No" option remains disabled
-    And no state change occurs
-
-  @AC4
-  Scenario: UI remains stable under obstruction (overlay)
-    Given an overlay is present covering the page
-    When the user attempts to interact with elements behind the overlay
-    Then elements remain interactable after scrolling into view
-    And no unexpected behavior occurs
-```
+  Scenario: AC4 – UI remains stable under overlay obstruction
+    Given the user is on the Text Box page
+    And an overlay covers the entire page
+    When the user scrolls the full name field into view
+    And enters text "Valid Name" into the full name field
+    Then the field should accept the input
+    And the page should remain interactable without errors

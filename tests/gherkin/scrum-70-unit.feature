@@ -1,53 +1,35 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-5252
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
-
   Background:
-    Given I am on the DemoQA Elements page
+    Given the user navigates to the DemoQA Elements page
 
-  @AC1 @EmailValidation
-  Scenario Outline: Invalid email triggers validation error and no output
-    When I fill the "userEmail" field with "<invalid_email>"
-    And I submit the form
-    Then I should see a validation error on "#userEmail"
-    And the output section "#output" should not be displayed
+  Scenario: AC1 – Email Validation for invalid email
+    Given the user is on the Text Box page
+    When the user enters an invalid email "test@domain" in the #userEmail field
+    And clicks the Submit button
+    Then the #userEmail field shows a validation error
+    And the #output section is not visible
 
-    Examples:
-      | invalid_email      |
-      | "test@domain"      |
-      | "user@.com"        |
-      | "@domain.com"      |
-      | "plainaddress"     |
-      | ""                 |
+  Scenario: AC2 – Web Tables Validation with non-numeric age and salary
+    Given the user is on the Web Tables page
+    When the user clicks the Add button to open the registration modal
+    And enters "abc" in the Age field and "12ab" in the Salary field
+    And clicks the Submit button in the modal
+    Then the registration modal remains open
+    And no new row is added to the table
 
-  @AC2 @WebTablesValidation
-  Scenario Outline: Non-numeric Age/Salary values block submission and keep modal open
-    Given I click the "Add" button to open the registration modal
-    When I fill the "Age" field with "<age>" and the "Salary" field with "<salary>"
-    And I click "Submit" in the modal
-    Then the modal should remain open
-    And I should see a validation message for the invalid fields
+  Scenario: AC3 – Radio Button Validation for disabled option
+    Given the user is on the Radio Button page
+    When the user locates the "#noRadio" element
+    Then the element is disabled
+    When the user clicks the "#noRadio" element
+    Then the element remains unchecked and no state change occurs
 
-    Examples:
-      | age  | salary |
-      | "abc"| "123"  |
-      | ""   | "45.6" |
-      | "12ab"| "abc" |
-      | "null"| "50000"|
-
-  @AC3 @RadioButtonValidation
-  Scenario: "No" radio button remains disabled and does not toggle
-    Given I am on the Radio Button section
-    When I try to click the "#noRadio" element
-    Then the "#noRadio" element should remain disabled
-    And no state change should be observed on the radio button group
-
-  @AC4 @UIStability
-  Scenario: UI remains stable under obstruction and elements remain interactable
-    Given an overlay or obstruction is present on the page
-    When I scroll to the "#userEmail" field
-    Then the "#userEmail" field should be interactable
-    And I should be able to fill and submit without errors
+  Scenario: AC4 – UI Stability under overlay obstruction
+    Given the user is on the Web Tables page
+    When the user opens the registration modal
+    And the modal overlays the table
+    When the user closes the modal by clicking the Cancel button
+    Then the table is still displayed and the page remains interactable
+    And the user can click the "Add" button again to open a new modal

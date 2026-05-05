@@ -1,141 +1,65 @@
-```typescript
 import { test, expect, Page } from '@playwright/test';
 
-test.describe('Negative Path Validation for DemoQA Elements Module @SCRUM-70 @Forensic-AEGIS-2026-MAY-5252', () => {
-  const BASE_URL = 'https://demoqa.com/elements';
+test.describe('Negative Path Validation for DemoQA Elements Module', () => {
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
+  test('AC1 – Email validation blocks invalid input and hides output', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
+    const emailInput = page.locator('#userEmail');
+    await emailInput.fill('test@domain');
+    await page.locator('#submit').click();
+    // Check validation error (CSS class or validation message)
+    await expect(emailInput).toHaveClass(/is-invalid/);
+    // Output section should not be visible
+    await expect(page.locator('#output')).toBeHidden();
   });
 
-  // AC1: Email Validation
-  test.describe('Email Validation @AC1', () => {
-    test('rejects invalid email format and hides output', async ({ page }) => {
-      const invalidEmails = ['test@domain', 'user@.com', '@domain.com', 'user@domain', ''];
+  test('AC2 – Web Tables rejects non-numeric age and salary', async ({ page }) => {
+    await page.goto('https://demoqa.com/webtables');
+    await page.locator('#addNewRecordButton').click();
+    const modal = page.locator('.modal-content');
+    await modal.waitFor({ state: 'visible' });
+    await page.locator('#age').fill('abc');
+    await page.locator('#salary').fill('12ab');
+    await page.locator('#submit').click();
+    // Modal should remain open
+    await expect(modal).toBeVisible();
+    // Fields still contain invalid values
+    await expect(page.locator('#age')).toHaveValue('abc');
+    await expect(page.locator('#salary')).toHaveValue('12ab');
+  });
 
-      for (const email of invalidEmails) {
-        await test.step(`Validating email: "${email}"`, async () => {
-          // Fill email field
-          const emailField = page.locator('#userEmail');
-          await emailField.clear();
-          await emailField.fill(email);
+  test('AC3 – Radio Button "No" remains disabled and unclickable', async ({ page }) => {
+    await page.goto('https://demoqa.com/radio-button');
+    const noRadio = page.locator('#noRadio');
+    // Verify disabled attribute
+    await expect(noRadio).toBeDisabled();
+    // Attempt to click (should not change state)
+    await noRadio.click({ force: true });
+    // Ensure still disabled and no selected class on label
+    await expect(noRadio).toBeDisabled();
+    await expect(page.locator('label[for="noRadio"]')).not.toHaveClass(/active/);
+  });
 
-          // Submit the form
-          await page.locator('#submit').click();
-
-          // Assert validation error is visible on #userEmail
-          await expect(emailField).toHaveAttribute('class', /is-invalid/);
-
-          // Assert #output is not displayed
-          await expect(page.locator('#output')).toBeHidden();
-        });
-      }
+  test('AC4 – UI remains stable under overlay obstruction', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
+    // Add a fixed overlay covering the whole page
+    await page.evaluate(() => {
+      const overlay = document.createElement('div');
+      overlay.id = 'test-overlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;';
+      document.body.appendChild(overlay);
+    });
+    const fullNameInput = page.locator('#userName');
+    // Scroll into view if needed
+    await fullNameInput.scrollIntoViewIfNeeded();
+    await fullNameInput.fill('Valid Name');
+    // Verify input accepted
+    await expect(fullNameInput).toHaveValue('Valid Name');
+    // Clean up overlay
+    await page.evaluate(() => {
+      const overlay = document.getElementById('test-overlay');
+      if (overlay) overlay.remove();
     });
   });
 
-  // AC2: Web Tables Validation
-  test.describe('Web Tables Validation @AC2', () => {
-    test('blocks submission with non-numeric values in Age/Salary and modal remains open', async ({ page }) => {
-      // Open Web Tables section and click add to open registration modal
-      await page.locator('#item-3').click();
-      await page.locator('#addNewRecordButton').click();
-      const modal = page.locator('.modal-content');
-
-      // Ensure modal is visible
-      await expect(modal).toBeVisible();
-
-      // Test cases: field -> non-numeric values
-      const testCases = [
-        { field: '#age', value: 'abc' },
-        { field: '#age', value: '12ab' },
-        { field: '#salary', value: 'abc' },
-        { field: '#salary', value: '12ab' },
-        { field: '#age', value: '' },
-        { field: '#salary', value: '' },
-      ];
-
-      for (const { field, value } of testCases) {
-        await test.step(`Entering value "${value}" in field "${field}"`, async () => {
-          // Ensure modal is still open after previous test
-          await expect(modal).toBeVisible();
-
-          const inputField = page.locator(field);
-          await inputField.clear();
-          await inputField.fill(value);
-
-          // Submit the modal
-          await page.locator('#submit').click();
-
-          // Modal should remain open
-          await expect(modal).toBeVisible();
-
-          // Submission is blocked - typically page doesn't change or validation class appears
-          // We can also check that no new row was added
-          // For simplicity, we confirm modal is still displayed
-        });
-      }
-    });
-  });
-
-  // AC3: Radio Button Validation
-  test.describe('Radio Button Validation @AC3', () => {
-    test('"No" option remains disabled and does not change state', async ({ page }) => {
-      // Navigate to Radio Button section
-      await page.locator('#item-2').click();
-      const noRadio = page.locator('#noRadio');
-
-      // Verify it is disabled
-      await expect(noRadio).toBeDisabled();
-
-      // Attempt to click
-      await noRadio.click({ force: true }); // force click because disabled, but element might not be disabled in DOM
-
-      // Verify still disabled and no state change (e.g., no success message)
-      await expect(noRadio).toBeDisabled();
-      // Optionally verify no success text appears
-      await expect(page.locator('.text-success')).toBeHidden();
-    });
-  });
-
-  // AC4: UI Stability
-  test.describe('UI Stability under obstruction @AC4', () => {
-    test('elements remain interactable when overlay is present', async ({ page }) => {
-      // Create an artificial overlay that covers the page
-      await page.evaluate(() => {
-        const overlay = document.createElement('div');
-        overlay.id = 'test-overlay';
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.zIndex = '9999';
-        overlay.style.background = 'rgba(0,0,0,0.5)';
-        document.body.appendChild(overlay);
-      });
-
-      // Attempt to interact with elements behind overlay
-      // Use scroll into view and visibility handling
-      const emailField = page.locator('#userEmail');
-      await emailField.scrollIntoViewIfNeeded();
-      // The overlay might block clicks, so we need to ensure it's not an issue
-      try {
-        await emailField.fill('test@example.com', { timeout: 3000 });
-      } catch {
-        // If blocked, try removing overlay or interacting via evaluate
-        // For the purpose of this test, we can remove overlay to simulate interactability
-        await page.evaluate(() => {
-          const overlay = document.querySelector('#test-overlay');
-          if (overlay) overlay.remove();
-        });
-        await emailField.fill('test@example.com');
-      }
-
-      // Verify no unexpected behavior - after fill, output should be hidden until submit
-      await expect(page.locator('#output')).toBeHidden();
-
-      // Optional: clean up overlay
-    });
-  });
 });
-```

@@ -1,43 +1,36 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-5252
 Feature: Negative Path Validation for DemoQA Elements Module
+  As a QA Engineer
+  I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable
 
-  Background:
-    Given I am on the DemoQA Elements home page
-
-  @AC1
-  Scenario: Invalid email triggers validation error and no output
-    Given I navigate to the "Text Box" section
-    When I enter an invalid email "test@domain"
-    And I click the Submit button
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D @AC1
+  Scenario: Email validation rejects invalid email and hides output
+    Given the user is on the Text Box page
+    When the user enters an invalid email like "test@domain"
+    And the user clicks the Submit button
     Then the email field should show a validation error
     And the output section should not be displayed
 
-  @AC2
-  Scenario Outline: Non-numeric value in "<field>" blocks submission and modal stays open
-    Given I navigate to the "Web Tables" section
-    When I click the Add button
-    And I enter "<value>" in the "<field>" field
-    And I submit the registration form
-    Then the form submission is blocked
-    And the registration modal remains open
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D @AC2
+  Scenario: Web Tables blocks non-numeric age or salary
+    Given the user is on the Registration Form modal
+    When the user enters non-numeric age like "abc"
+    And the user enters valid other fields
+    And the user clicks Submit
+    Then the registration modal should remain open
+    And the age field should show validation error
 
-    Examples:
-      | field   | value |
-      | Age     | abc   |
-      | Salary  | 12ab  |
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D @AC3
+  Scenario: No radio button remains disabled and non-interactive
+    Given the user is on the Radio Button page
+    Then the "No" option should be disabled
+    When the user clicks the "No" option
+    Then the state of "No" should remain unchanged
+    And no radio button selection should be indicated
 
-  @AC3
-  Scenario: "No" radio button is disabled and does not change state on click
-    Given I navigate to the "Radio Button" section
-    Then the "No" radio button should be disabled
-    When I click the "No" radio button
-    Then the "No" radio button is still disabled
-    And no success message is displayed
-
-  @AC4
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E63D @AC4
   Scenario: UI remains stable under overlay obstruction
-    Given I navigate to the "Text Box" section
-    When an overlay is injected covering the Submit button
-    And I scroll the Submit button into view
-    Then the Submit button should be clickable
-    And clicking it should still trigger validation
+    Given the user is on a page with an overlay
+    When the user scrolls to the target element
+    And the user clicks the element
+    Then the element should respond as expected without layout shift
