@@ -2,7 +2,12 @@ pipeline {
   agent any
 
   options {
+    skipDefaultCheckout(true)
     timestamps()
+  }
+
+  parameters {
+    string(name: 'RUNNER_BRANCH', defaultValue: 'main', description: 'Git branch to execute for the generated test suite')
   }
 
   environment {
@@ -11,9 +16,23 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
+    stage('Checkout Target Branch') {
       steps {
-        checkout scm
+        script {
+          def branchName = (params.RUNNER_BRANCH ?: 'main').trim()
+          def remoteConfig = scm.userRemoteConfigs[0]
+          checkout([
+            $class: 'GitSCM',
+            branches: [[name: "*/${branchName}"]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [[$class: 'CleanBeforeCheckout']],
+            userRemoteConfigs: [[
+              url: remoteConfig.url,
+              credentialsId: remoteConfig.credentialsId
+            ]]
+          ])
+          env.EXECUTED_BRANCH = branchName
+        }
       }
     }
 
@@ -39,7 +58,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'playwright-report/**, test-results/**, tests/generated/**', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'playwright-report/**, test-results/**, tests/generated/**, tests/gherkin/**', allowEmptyArchive: true
       junit testResults: 'test-results/junit.xml', allowEmptyResults: true
     }
   }
