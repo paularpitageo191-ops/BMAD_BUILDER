@@ -1,43 +1,33 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
-
   Background:
-    Given the user is on the DemoQA Elements page
+    Given the user is on the DemoQA Elements module page
 
-  @AC1 @email
-  Scenario: Email validation rejects invalid format and hides output
-    Given the user navigates to the Text Box section
-    When the user enters an invalid email "test@domain" in the #userEmail field
-    And the user clicks the Submit button
-    Then the #userEmail field should show a validation error
-    And the #output section should not be displayed
+  Scenario: Email field rejects invalid email formats
+    When the user enters an invalid email (e.g., "test@domain") into the #userEmail field
+    And clicks the Submit button
+    Then the #userEmail field shows a validation error
+    And the #output section is not displayed
 
-  @AC2 @web-tables
-  Scenario: Web Tables blocks submission for non-numeric Age and keeps modal open
-    Given the user navigates to the Web Tables section
+  Scenario: Web tables reject non-numeric Age and Salary values
+    Given the user opens the Web Tables section
     When the user clicks the Add button to open the registration modal
-    And the user enters a non-numeric value "abc" in the Age field
-    And the user clicks the Submit button in the modal
-    Then the registration modal should remain open
-    And the Age field should be marked as invalid
-    And no new record should appear in the table
+    And enters non-numeric values in the Age and Salary fields
+    And clicks the Submit button
+    Then the registration modal remains open
+    And the form does not submit
 
-  @AC3 @radio-button
-  Scenario: Radio Button "No" remains disabled and unresponsive
-    Given the user navigates to the Radio Button section
-    When the user verifies that the #noRadio option is disabled
-    And the user clicks on the #noRadio label
-    Then the #noRadio option should still be disabled
-    And no selection message should appear
+  Scenario: Radio button "No" remains disabled
+    Given the user is on the Radio Button section
+    Then the #noRadio element is disabled
+    When the user clicks on the #noRadio element
+    Then the element remains disabled
+    And no state change occurs
 
-  @AC4 @ui-stability
   Scenario: UI remains stable under overlay obstruction
-    Given the user is on the Text Box section
-    When an overlay is placed over the page
-    And the user attempts to interact with the #userEmail field using scroll and visibility handling
-    Then the field should receive a valid input without errors
-    And the #output section should be displayed after submission
+    Given the user is on the DemoQA Elements page
+    When the page displays an overlay covering interactive elements
+    Then the user can scroll to make elements visible
+    And the user can interact with elements after scrolling
+    And no element becomes permanently hidden or non-interactive

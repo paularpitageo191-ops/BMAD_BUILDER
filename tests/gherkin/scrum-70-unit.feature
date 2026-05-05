@@ -1,46 +1,35 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  Scenario: AC1 - Invalid email shows validation error and no output
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
+  Scenario: Invalid email input triggers validation error and hides output section
     Given the user is on the Text Box page
-    When the user enters an invalid email such as "test@domain"
-    And clicks the Submit button
-    Then the email field should show a validation error with class "field-error"
-    And the output section with id "output" should not be displayed
+    When the user enters an invalid email "test@domain" in the email field
+    And the user clicks the Submit button
+    Then the email field shows a validation error
+    And the output section with id "output" is not displayed
 
-  Scenario: AC1 - Empty email submission does not show output
-    Given the user is on the Text Box page
-    When the user leaves the email field empty
-    And clicks the Submit button
-    Then the email field should show a validation error with class "field-error"
-    And the output section with id "output" should not be displayed
-
-  Scenario: AC2 - Non-numeric Age blocks submission and modal stays open
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
+  Scenario: Non-numeric Age blocks form submission and keeps modal open
     Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters non-numeric value "abc" in the Age field
-    And submits the form
-    Then the registration modal should remain open
-    And the Age field should show a validation error or the submit should be prevented
+    When the user clicks the Add button to open the registration modal
+    And the user enters a non-numeric value "abc" in the Age field
+    And the user clicks the Submit button in the modal
+    Then the registration modal remains visible
+    And no new record is added to the table
 
-  Scenario: AC2 - Non-numeric Salary blocks submission and modal stays open
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters non-numeric value "12ab" in the Salary field
-    And submits the form
-    Then the registration modal should remain open
-    And the Salary field should show a validation error or the submit should be prevented
-
-  Scenario: AC3 - "No" radio button remains disabled
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
+  Scenario: Disabled "No" radio button remains unresponsive
     Given the user is on the Radio Button page
-    Then the "No" radio button with id "noRadio" should be disabled
     When the user attempts to click the "No" radio button
-    Then the "No" radio button should remain disabled
-    And no "Yes" or other radio button state should change
+    Then the "No" radio button remains disabled
+    And no radio selection state change occurs (no "You have selected" message is updated)
 
-  Scenario: AC4 - UI stability under overlay obstruction
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
+  Scenario: UI remains interactable under obstruction (overlay)
     Given the user is on the Text Box page
-    When a fixed overlay is added to the page to obstruct the email field
-    Then the email field should still be interactable by scrolling into view
-    And the user should be able to enter text and submit successfully after scrolling
-    And the output section should be displayed for valid input
+    When an overlay is present that covers part of the page
+    And the user scrolls to the email field
+    And the user enters text in the email field and submits
+    Then the email field is interactable and the interaction completes without error
+    And the output section is not displayed (invalid email) or the validation error appears

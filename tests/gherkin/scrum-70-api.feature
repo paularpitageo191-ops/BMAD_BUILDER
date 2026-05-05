@@ -1,35 +1,54 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
-Feature: Elements Negative Path Validation
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
+Feature: Negative Path Validation for DemoQA Elements Module
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
   so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
 
   Background:
-    Given I am on the DemoQA Elements page
+    Given the user is on the DemoQA Elements page
 
-  Scenario: AC1 – Email Validation triggers error and hides output
-    When I enter an invalid email format into the "Email" field
-    Then a validation error is visible on the #userEmail input
-    And the #output section is not displayed
+  @AC1 @email_validation
+  Scenario: Invalid email triggers validation error and no output is displayed
+    When the user enters an invalid email address "test@domain" into the Email field
+    And clicks the Submit button
+    Then the Email field should show a validation error
+    And the output section "#output" should not be visible
 
-  Scenario: AC2 – Web Tables reject non-numeric Age/Salary
-    Given I open the Web Tables registration form
-    When I enter non-numeric values in the Age and Salary fields
-    And I click "Submit" in the modal
+  @AC2 @web_tables_validation
+  Scenario: Non-numeric Age blocks submission and modal stays open
+    When the user opens the Web Tables registration form
+    And enters "abc" into the Age field
+    And clicks Submit in the registration modal
     Then the registration modal remains open
-    And the fields contain the invalid values
+    And the Age field shows validation error
 
-  Scenario: AC3 – Radio Button "No" remains disabled
-    Given I navigate to the Radio Button section
-    Then the "No" option (#noRadio) is disabled
-    When I click on the "No" option
-    Then no state change occurs:
-      * The "No" option remains disabled
-      * The result text (if any) does not change
+  @AC2 @web_tables_validation
+  Scenario: Non-numeric Salary blocks submission and modal stays open
+    When the user opens the Web Tables registration form
+    And enters "12ab" into the Salary field
+    And clicks Submit in the registration modal
+    Then the registration modal remains open
+    And the Salary field shows validation error
 
-  Scenario: AC4 – UI Stability under overlay obstruction
-    Given I am on the Radio Button section
-    When I inject a fixed overlay that covers the page
-    Then I can still interact with the "Yes" radio button by scrolling or using visibility handling
-    And the radio button selection changes correctly
-    And the overlay does not break the page layout
+  @AC2 @web_tables_validation
+  Scenario: Empty fields in registration modal block submission
+    When the user opens the Web Tables registration form
+    And leaves all fields empty
+    And clicks Submit in the registration modal
+    Then the registration modal remains open
+
+  @AC3 @radio_button_validation
+  Scenario: "No" radio button remains disabled and clicking does nothing
+    When the user locates the "No" radio button "#noRadio"
+    Then the "#noRadio" element should be disabled
+    When the user clicks on "#noRadio"
+    Then the "#noRadio" element should remain disabled
+    And no visual state change (like checked style) should occur
+
+  @AC4 @ui_stability
+  Scenario: UI remains stable under overlay obstruction
+    Given an overlay is added to cover part of the page
+    When the user scrolls to the Text Box section and enters valid data
+    And clicks Submit
+    Then the output section "#output" should become visible
+    And the overlay does not prevent interaction after scrolling

@@ -1,48 +1,35 @@
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions.
+  As a QA engineer, I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given I open the DemoQA Elements application base URL
+Background:
+  Given I open the DemoQA Elements page
+  And I accept any cookie or consent dialogs if present
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
-  Scenario: AC1 – Email validation rejects invalid input and hides output
-    Given I am on the "Text Box" page
-    When I fill the "Full Name" field with "John Doe"
-    And I fill the "Email" field with "test@domain"
-    And I submit the form
-    Then the email input field should show a validation error
-    And the output section should not be displayed
+Scenario: AC1 – Invalid email triggers validation error and output not displayed
+  Given I navigate to the Text Box section
+  When I fill the email field with "test@domain"
+  And I click the submit button
+  Then the email field should have a CSS validation pseudo-class ":invalid"
+  And the output section "#output" should not be visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
-  Scenario: AC2 – Web Tables blocks non-numeric age and salary
-    Given I am on the "Web Tables" page
-    When I click the "Add" button to open the registration modal
-    And I fill "First Name" with "Jane"
-    And I fill "Last Name" with "Doe"
-    And I fill "Email" with "jane@example.com"
-    And I fill "Age" with "abc"
-    And I fill "Salary" with "12ab"
-    And I fill "Department" with "QA"
-    And I submit the registration form
-    Then the registration modal should remain open
-    And no new row should appear in the web table
+Scenario: AC2 – Non-numeric Age/Salary blocks submission
+  Given I navigate to the Web Tables section
+  When I click the "Add" button to open the registration modal
+  And I fill all required fields with valid data except Age set to "abc"
+  And I click the "Submit" button in the modal
+  Then the registration modal should remain open
+  And no new row should appear in the table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
-  Scenario: AC3 – Radio Button "No" option remains disabled and unresponsive
-    Given I am on the "Radio Button" page
-    When I inspect the "No" radio button
-    Then the "No" radio button should be disabled
-    When I attempt to click the "No" radio button using force
-    Then the button should still be disabled
-    And no success message should appear
-    And no other radio button should become selected
+Scenario: AC3 – "No" radio button is disabled and non-interactable
+  Given I navigate to the Radio Button section
+  When I attempt to click the "#noRadio" element
+  Then the "#noRadio" should remain disabled
+  And the radio button should not become checked
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C711
-  Scenario: AC4 – UI remains stable under overlay obstruction
-    Given I am on the "Web Tables" page
-    When I artificially obstruct the page with a full-screen overlay
-    And I wait briefly for the obstruction
-    Then the "Add" button should be clickable via scrolling and forced visibility
-    And the registration modal should open after clicking the "Add" button
+Scenario: AC4 – UI remains interactable under an overlay obstruction
+  Given I have an overlay covering part of the page
+  When I scroll to the "Buttons" section
+  Then I can click the "Click Me" button without error
+  And the click action is processed successfully
