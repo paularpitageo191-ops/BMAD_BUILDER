@@ -1,30 +1,37 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  Scenario: AC1 - Email validation blocks invalid input and hides output section
-    Given the user is on the Elements page
-    When the user enters an invalid email "test@domain" into the #userEmail field
-    And clicks the Submit button
-    Then the #userEmail field displays a validation error
-    And the #output section is not visible
+  Background: User is on DemoQA Elements page
+    Given the user navigates to "https://demoqa.com/elements"
 
-  Scenario: AC2 - Non-numeric Age or Salary prevents Web Tables submission
-    Given the user has opened the Registration modal in the Web Tables section
-    When the user enters "abc" into the Age field
-    And enters "12ab" into the Salary field
-    And clicks the Submit button within the modal
-    Then the registration modal remains open
-    And no new record appears in the table
-
-  Scenario: AC3 - #noRadio button remains disabled and unresponsive
-    Given the user is on the Radio Button section
-    When the user attempts to click the #noRadio element
-    Then the #noRadio element is still disabled
-    And its checked property remains false
-
-  Scenario: AC4 - UI remains interactable under overlay obstruction
-    Given the page may contain an overlay
-    When the test scrolls to the #submit button in the Text Box section
+  @AC1
+  Scenario: Email validation rejects invalid formats and does not display output
+    Given the user is on the Text Box section
+    When the user enters an invalid email "test@domain" in the #userEmail field
     And clicks the #submit button
-    Then the click action is performed successfully
-    And the element is interactable via scroll and visibility handling
+    Then the #userEmail field should show a validation error
+    And the #output section should not be visible
+
+  @AC2
+  Scenario: Web Tables - Non-numeric age/salary blocks submission and modal remains open
+    Given the user is on the Web Tables section
+    When the user clicks the Add button to open the registration modal
+    And enters "abc" in the age field
+    And enters "xyz" in the salary field
+    And clicks the Submit button within the modal
+    Then the registration modal should still be visible
+    And no new record should be added to the table
+
+  @AC3
+  Scenario: Radio Button - "No" option remains disabled and non-interactive
+    Given the user is on the Radio Button section
+    Then the "No" radio button identified by #noRadio should be disabled
+    When the user attempts to click the #noRadio element
+    Then the #noRadio element should still be disabled
+    And it should not be checked
+
+  @AC4
+  Scenario: UI stability under overlay - elements remain interactable via scroll/visibility
+    Given an overlay obstructs the page
+    When the user scrolls the #submit element into view and clicks it
+    Then the #submit element should be visible and the click should succeed

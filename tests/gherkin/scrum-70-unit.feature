@@ -1,29 +1,35 @@
 Feature: Negative Path Validation for DemoQA Elements Module
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
-  Scenario: AC1 - Email validation rejects invalid email and hides output
-    Given I am on the DemoQA Text Box page
-    When I enter an invalid email "test@domain" into the email field
-    And I click the submit button
-    Then I should see a validation error on the #userEmail field
-    And the output section #output should not be displayed
+  As a QA Engineer
+  I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Scenario: AC2 - Web Tables reject non-numeric Age/Salary
-    Given I am on the DemoQA Web Tables page
-    When I click the "Add" button to open registration modal
-    And I enter non-numeric values in Age and Salary fields
-    And I click the submit button in the modal
-    Then the registration modal should remain open
-    And the record should not be added to the table
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+  Scenario: AC1 - Invalid email triggers validation error and no output section
+    Given the user navigates to the Text Box page on DemoQA
+    When the user enters an invalid email "test@domain" in the email field
+    And the user clicks the Submit button
+    Then a validation error is displayed on the #userEmail field
+    And the #output section is not visible
 
-  Scenario: AC3 - "No" radio button remains disabled
-    Given I am on the DemoQA Radio Buttons page
-    Then the "No" radio button should be disabled
-    When I attempt to click the "No" radio button
-    Then the "No" radio button should still be disabled
-    And no state change should occur
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+  Scenario: AC2 - Non-numeric Age/Salary blocks submission in Web Tables
+    Given the user navigates to the Web Tables page on DemoQA
+    When the user clicks the Add button to open the registration modal
+    And the user enters invalid data: First Name "John", Last Name "Doe", Email "john@example.com", Age "abc", Salary "12ab", Department "QA"
+    And the user clicks the Submit button in the modal
+    Then the registration modal remains open
+    And the Age and Salary fields show validation failure (no row added)
 
-  Scenario: AC4 - UI remains stable under overlay obstruction
-    Given I am on a DemoQA page with an overlay element
-    When the overlay is present
-    Then elements should remain interactable via scroll or visibility handling
-    And the page layout should not break
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+  Scenario: AC3 - Disabled "No" radio button does not change state on click
+    Given the user navigates to the Radio Button page on DemoQA
+    When the user attempts to click the "No" radio button identified by #noRadio
+    Then the #noRadio button remains disabled
+    And no success message or state change occurs
+
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+  Scenario: AC4 - UI remains stable under obstruction and elements are interactable
+    Given the user navigates to the Text Box page on DemoQA
+    When an overlay (e.g., an ad or iframe) obstructs part of the page
+    Then the user can scroll to the #userEmail field and interact with it
+    And the field remains focusable and editable

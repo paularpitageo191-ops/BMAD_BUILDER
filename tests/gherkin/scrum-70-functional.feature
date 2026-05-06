@@ -1,36 +1,39 @@
-Feature: Negative Path Validation for DemoQA Elements Module
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+Feature: DemoQA Elements Module Negative Path Validation
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
-  Scenario: AC1 - Email validation rejects invalid input
-    Given I am on the Text Box page
-    When I enter an invalid email "test@domain" into the "#userEmail" field
-    And I click outside the field to trigger validation
-    Then a validation error is visible on the "#userEmail" field
-    And the "#output" section is not displayed
+  Background:
+    Given the user navigates to the DemoQA Elements page
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
-  Scenario: AC2 - Web Tables blocks non-numeric Age and Salary
-    Given I am on the Web Tables page
-    When I click the "Add" button to open the registration modal
-    And I enter the following invalid data:
-      | First Name | Last Name | Email | Age | Salary | Department |
-      | John | Doe | j@doe.com | abc | 12ab | Engineering |
-    And I click the "Submit" button inside the modal
-    Then the registration modal remains open
-    And the Age field shows a validation error
-    And the Salary field shows a validation error
+  @AC1 @email-validation
+  Scenario: Invalid email triggers validation error and no output
+    Given the user opens the Text Box section
+    When the user enters an invalid email address "test@domain"
+    And the user clicks the Submit button
+    Then the email input field #userEmail should have the CSS class "field-error" or show validation error
+    And the output section #output should not be visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
-  Scenario: AC3 - "No" radio button is disabled and non-interactive
-    Given I am on the Radio Button page
-    Then the "#noRadio" option should be disabled
-    When I attempt to click the "#noRadio" option
-    Then the "#noRadio" option remains disabled and unselected
+  @AC2 @web-tables-validation
+  Scenario: Non-numeric Age/Salary blocks submission and modal stays open
+    Given the user opens the Web Tables section
+    And the user clicks the Add button to open the registration modal
+    When the user enters non-numeric values in the Age field "abc" and Salary field "12ab"
+    And the user clicks the Submit button in the registration modal
+    Then the registration modal should remain open
+    And the modal should not close
+    And no new row should appear in the web table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
-  Scenario: AC4 - UI remains interactable under an overlay obstruction
-    Given I am on the Text Box page
-    When an overlay covers the top half of the form
-    Then I can scroll to the "Full Name" field and type into it
-    And I can still type into the "#userEmail" field
-    And the overlay does not affect element availability
+  @AC3 @radio-button-validation
+  Scenario: "No" radio button remains disabled and unclickable
+    Given the user opens the Radio Button section
+    Then the "No" radio button identified by #noRadio should be disabled
+    When the user attempts to click the #noRadio element
+    Then the #noRadio element should still be disabled
+    And no success message should appear (e.g., .text-success should not contain "No")
+
+  @AC4 @ui-stability
+  Scenario: UI remains stable after overlay obstruction
+    Given the user opens the Web Tables section
+    When the user opens the registration modal
+    And the user closes the modal by clicking the close button
+    Then the page should be scrollable and elements in the main content area remain interactable
+    And the Add button should be clickable after modal close
