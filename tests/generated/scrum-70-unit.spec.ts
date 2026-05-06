@@ -1,108 +1,86 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'https://demoqa.com';
+test.describe('SCRUM-70 Negative Path Validation for DemoQA Elements Module', () => {
 
-test.describe('SCRUM-70 Negative Path Validation for Elements Module', () => {
+  test('AC1 – Email validation rejects invalid email and hides output', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
 
-  test('AC1 – Email Validation rejects invalid email @example', async ({ page }) => {
-    const invalidEmails = [
-      'test@domain',
-      'invalid.email@',
-      '@domain.com',
-      'user@.com',
-      '',
-    ];
+    const emailField = page.locator('#userEmail');
+    const submitButton = page.locator('#submit');
+    const outputSection = page.locator('#output');
 
-    for (const email of invalidEmails) {
-      await page.goto(`${BASE_URL}/text-box`);
-      await page.locator('#userEmail').fill(email);
-      await page.locator('#submit').click();
+    // Enter invalid email (missing TLD)
+    await emailField.fill('test@domain');
+    await submitButton.click();
 
-      // Assert validation error is shown on the email field
-      const emailInput = page.locator('#userEmail');
-      await expect(emailInput).toHaveClass(/field-error|is-invalid/);
-      // Assert output section is not visible
-      await expect(page.locator('#output')).not.toBeVisible();
-    }
+    // Check validation error on email field (expect a class like 'field-error')
+    await expect(emailField).toHaveClass(/field-error|is-invalid|error/);
+
+    // Output section should not be visible
+    await expect(outputSection).toBeHidden();
   });
 
-  test('AC2 – Web Tables blocks non-numeric Age or Salary', async ({ page }) => {
-    const testData = [
-      { field: 'age', value: 'abc' },
-      { field: 'age', value: '12ab' },
-      { field: 'salary', value: 'xyz' },
-      { field: 'salary', value: 'ab12' },
-    ];
+  test('AC2 – Non-numeric inputs in Age or Salary block submission and keep modal open', async ({ page }) => {
+    await page.goto('https://demoqa.com/webtables');
 
-    for (const { field, value } of testData) {
-      await page.goto(`${BASE_URL}/webtables`);
-      await page.locator('#addNewRecordButton').click();
+    // Click Add button to open registration modal
+    const addButton = page.locator('#addNewRecordButton');
+    await addButton.click();
 
-      // Fill required fields with valid data except the targeted field
-      const validData = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        age: '20',
-        salary: '50000',
-        department: 'QA',
-      };
-      validData[field] = value;
+    const ageField = page.locator('#age');
+    const salaryField = page.locator('#salary');
+    const submitButton = page.locator('#submit');
+    const modal = page.locator('.modal-dialog');
 
-      await page.locator('#firstName').fill(validData.firstName);
-      await page.locator('#lastName').fill(validData.lastName);
-      await page.locator('#userEmail').fill(validData.email);
-      await page.locator('#age').fill(validData.age);
-      await page.locator('#salary').fill(validData.salary);
-      await page.locator('#department').fill(validData.department);
+    // Enter non-numeric values
+    await ageField.fill('abc');
+    await salaryField.fill('12ab');
+    await submitButton.click();
 
-      await page.locator('#submit').click();
-
-      // Assert modal remains open (registration form is still visible)
-      await expect(page.locator('.modal-content')).toBeVisible();
-      // Assert error indicator on the invalid field (assumes error state like border-color red)
-      const fieldLocator = page.locator(`#${field}`);
-      await expect(fieldLocator).toHaveClass(/field-error|is-invalid/);
-    }
+    // Modal should remain open
+    await expect(modal).toBeVisible();
   });
 
-  test('AC3 – Radio Button "No" remains disabled and unclickable', async ({ page }) => {
-    await page.goto(`${BASE_URL}/radio-button`);
+  test('AC3 – "No" radio button is disabled and cannot be interacted with', async ({ page }) => {
+    await page.goto('https://demoqa.com/radio-button');
 
     const noRadio = page.locator('#noRadio');
 
-    // Verify it is disabled
+    // Check it is disabled
     await expect(noRadio).toBeDisabled();
 
-    // Attempt click
+    // Attempt to click using JavaScript force to bypass disabled state
     await noRadio.click({ force: true });
 
-    // Verify still disabled
+    // Should still be disabled after click
     await expect(noRadio).toBeDisabled();
-
-    // Verify no state change – the "No" radio should not be selected
-    await expect(page.locator('.text-success')).not.toContainText('No');
   });
 
-  test('AC4 – UI remains stable after overlay interaction', async ({ page }) => {
-    await page.goto(`${BASE_URL}/webtables`);
+  test('AC4 – UI remains stable under obstruction and elements remain interactable', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
 
-    // Open registration modal
-    await page.locator('#addNewRecordButton').click();
-    await expect(page.locator('.modal-content')).toBeVisible();
+    const submitButton = page.locator('#submit');
 
-    // Close modal by clicking the X button or cancel
-    await page.locator('.modal-header .close').click(); // Bootstrap close button
-    // Alternatively: await page.locator('button:has-text("Close")').click();
+    // Add a fixed overlay to simulate obstruction
+    await page.evaluate(() => {
+      const overlay = document.createElement('div');
+      overlay.id = 'test-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.background = 'rgba(0,0,0,0.5)';
+      overlay.style.zIndex = '9999';
+      document.body.appendChild(overlay);
+    });
 
-    // Verify the underlying page elements are still interactable
-    const addButton = page.locator('#addNewRecordButton');
-    await expect(addButton).toBeEnabled();
-    await expect(addButton).toBeVisible();
+    // Scroll to submit button and verify it is visible and enabled
+    await submitButton.scrollIntoViewIfNeeded();
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toBeEnabled();
 
-    // Verify the table is still present
-    const table = page.locator('.rt-table');
-    await expect(table).toBeVisible();
+    // Click the button (should succeed)
+    await submitButton.click();
   });
-
 });

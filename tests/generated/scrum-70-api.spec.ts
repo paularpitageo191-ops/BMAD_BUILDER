@@ -1,104 +1,109 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Negative Path Validation for DemoQA Elements Module - SCRUM-70', () => {
+test.describe('SCRUM-70: Negative Path Validation for DemoQA Elements Module', () => {
   const baseUrl = 'https://demoqa.com';
 
-  test('AC1: Invalid email triggers validation error and hides output', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(baseUrl);
+  });
+
+  test('AC1 – Email validation rejects invalid input', async ({ page }) => {
+    // Navigate to Text Box page
     await page.goto(`${baseUrl}/text-box`);
+
+    // Enter invalid email
     const emailInput = page.locator('#userEmail');
-    const submitButton = page.locator('#submit');
-    const outputSection = page.locator('#output');
-
     await emailInput.fill('test@domain');
-    await submitButton.click();
+    await page.locator('#submit').click();
 
-    // Verify validation error styling (Bootstrap invalid class)
-    await expect(emailInput).toHaveClass(/is-invalid/);
-    // Verify output section is not visible
-    await expect(outputSection).not.toBeVisible();
+    // Assert validation error – the input should be invalid
+    const isInvalid = await emailInput.evaluate((el: HTMLInputElement) => !el.checkValidity());
+    expect(isInvalid).toBeTruthy();
+
+    // Assert output section is not visible
+    const output = page.locator('#output');
+    await expect(output).not.toBeVisible();
   });
 
-  test('AC2: Non-numeric age blocks submission - modal stays open', async ({ page }) => {
+  test('AC2 – Web Tables blocks non-numeric Age and Salary', async ({ page }) => {
+    // Navigate to Web Tables page
     await page.goto(`${baseUrl}/webtables`);
-    const addButton = page.locator('#addNewRecordButton');
-    await addButton.click();
 
+    // Click Add button to open the registration modal
+    await page.locator('text=Add').click();
+
+    // Wait for the modal to be visible
     const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
 
-    const ageInput = page.locator('#age');
-    await ageInput.fill('abc');
+    // Fill Age and Salary fields with non-numeric values
+    const ageField = modal.locator('#age');
+    const salaryField = modal.locator('#salary');
+    await ageField.fill('abc');
+    await salaryField.fill('12ab');
 
-    const submitButton = modal.locator('#submit');
-    await submitButton.click();
+    // Click Submit
+    await page.locator('text=Submit').click();
 
-    // Modal should remain open
+    // Assert modal still open
     await expect(modal).toBeVisible();
-    // Table should not contain the invalid value
-    const table = page.locator('.rt-tbody');
-    await expect(table).not.toContainText('abc');
+
+    // Assert Age field shows validation error (check for invalid pseudo-class)
+    const ageInvalid = await ageField.evaluate((el: HTMLInputElement) => !el.checkValidity());
+    expect(ageInvalid).toBeTruthy();
+
+    const salaryInvalid = await salaryField.evaluate((el: HTMLInputElement) => !el.checkValidity());
+    expect(salaryInvalid).toBeTruthy();
   });
 
-  test('AC2: Non-numeric salary blocks submission - modal stays open', async ({ page }) => {
-    await page.goto(`${baseUrl}/webtables`);
-    const addButton = page.locator('#addNewRecordButton');
-    await addButton.click();
-
-    const modal = page.locator('.modal-content');
-    await expect(modal).toBeVisible();
-
-    const salaryInput = page.locator('#salary');
-    await salaryInput.fill('xyz');
-
-    const submitButton = modal.locator('#submit');
-    await submitButton.click();
-
-    await expect(modal).toBeVisible();
-    const table = page.locator('.rt-tbody');
-    await expect(table).not.toContainText('xyz');
-  });
-
-  test('AC3: "No" radio button remains disabled and no state change on click', async ({ page }) => {
+  test('AC3 – Radio Button "No" remains disabled', async ({ page }) => {
+    // Navigate to Radio Button page
     await page.goto(`${baseUrl}/radio-button`);
+
+    // Locate the "No" radio button
     const noRadio = page.locator('#noRadio');
     await expect(noRadio).toBeDisabled();
 
-    // Attempt to click – should have no effect
-    await noRadio.click({ force: true }); // force to bypass disabled click rejection
-    // Element must still be disabled
+    // Attempt to click (should not cause any state change)
+    await noRadio.click({ force: true });
+
+    // Confirm still disabled
     await expect(noRadio).toBeDisabled();
-    // No visual change: check that no "active" class is applied (the "Yes" button has class "custom-control-input" but selection state is indicated by label background)
-    const noLabel = page.locator('label[for="noRadio"]');
-    const activeClassPresent = await noLabel.evaluate(el => el.classList.contains('active'));
-    expect(activeClassPresent).toBe(false);
+
+    // Confirm its selected state is unchanged (not checked)
+    const isChecked = await noRadio.isChecked();
+    expect(isChecked).toBeFalsy();
   });
 
-  test('AC4: UI stability under overlay – interaction still possible', async ({ page }) => {
-    await page.goto(`${baseUrl}/radio-button`);
-    // Add a full‑page overlay via JavaScript
+  test('AC4 – UI stability under overlay obstruction', async ({ page }) => {
+    // Navigate to Text Box page
+    await page.goto(`${baseUrl}/text-box`);
+
+    // Inject a fixed overlay that covers the entire viewport
     await page.evaluate(() => {
       const overlay = document.createElement('div');
       overlay.id = 'test-overlay';
-      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;pointer-events:none;';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100vw';
+      overlay.style.height = '100vh';
+      overlay.style.background = 'rgba(0,0,0,0.5)';
+      overlay.style.zIndex = '9999';
       document.body.appendChild(overlay);
     });
 
-    // Scroll to the "Yes" radio button and make sure it’s visible
-    const yesRadio = page.locator('#yesRadio');
-    await yesRadio.scrollIntoViewIfNeeded();
-    await yesRadio.waitFor({ state: 'visible', timeout: 5000 });
+    // Scroll the email field into view and verify it can be interacted with
+    const emailInput = page.locator('#userEmail');
+    await emailInput.scrollIntoViewIfNeeded();
+    await expect(emailInput).toBeVisible();
+    await expect(emailInput).toBeEnabled();
 
-    // Click the "Yes" radio button
-    await yesRadio.click();
-
-    // Verify the radio button is selected (text "Yes" appears in result)
-    const resultText = page.locator('.text-success');
-    await expect(resultText).toHaveText('Yes');
-
-    // Clean up: remove the overlay
-    await page.evaluate(() => {
-      const overlay = document.getElementById('test-overlay');
-      if (overlay) overlay.remove();
-    });
+    // Fill a value to confirm real interaction
+    await emailInput.fill('valid@example.com');
+    // Optionally submit and verify output is shown (positive check to confirm stability)
+    await page.locator('#submit').click();
+    const output = page.locator('#output');
+    await expect(output).toBeVisible();
   });
 });

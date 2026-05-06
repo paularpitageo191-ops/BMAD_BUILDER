@@ -1,35 +1,41 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
-Feature: DemoQA Elements Module Negative Path Validation
+Feature: Elements Module Negative Path Validation
+  As a QA Engineer
+  I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  @AC1
-  Scenario: Invalid email triggers validation error and no output
-    Given the user is on the Text Box page
-    When the user enters invalid email "test@domain" and clicks Submit
-    Then the email input field shows a validation error
-    And the output section is not visible
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
+  Scenario: AC1 - Email Validation rejects invalid input and hides output
+    Given the user navigates to the Text Box page
+    When the user enters an invalid email "test@domain" and clicks Submit
+    Then the email field shows a validation error (class "field-error" applied)
+    And the output section #output is not visible
 
-  @AC2
-  Scenario: Non-numeric values in Age or Salary block submission
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters non-numeric age "abc" and non-numeric salary "12ab"
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
+  Scenario: AC1 - Email Validation shows output for valid input
+    Given the user navigates to the Text Box page
+    When the user enters a valid email "test@example.com" and clicks Submit
+    Then the email field shows no validation error
+    And the output section #output becomes visible
+
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
+  Scenario: AC2 - Web Tables rejects non-numeric age or salary
+    Given the user navigates to the Web Tables page
+    When the user opens the registration modal and enters non-numeric age "abc" and salary "12ab"
     And clicks Submit
-    Then the modal remains open
-    And the fields still contain the invalid values
+    Then the registration modal remains open
+    And the age and salary fields show validation errors
 
-  @AC3
-  Scenario: "No" radio button remains disabled and no state change on click
-    Given the user is on the Radio Button page
-    Then the "No" radio button is disabled
-    When the user attempts to click the "No" radio button
-    Then the radio button remains disabled
-    And no selection state has changed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
+  Scenario: AC3 - Radio Button "No" remains disabled and ignores clicks
+    Given the user navigates to the Radio Button page
+    When the user attempts to click the disabled "#noRadio" option
+    Then the "#noRadio" element remains disabled
+    And no state change is observed (no success message for "No")
 
-  @AC4
-  Scenario: UI elements remain interactable under overlay obstruction
-    Given the user is on the Text Box page
-    And an overlay covers the entire page
-    When the user scrolls to the email field and enters invalid email "test@domain"
-    And clicks Submit using force
-    Then the email validation error is still displayed
-    And the output section is not displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
+  Scenario: AC4 - UI remains stable under overlay obstruction
+    Given the user navigates to the Text Box page
+    When an overlay is injected over the page
+    And the user scrolls the email field into view and clicks it
+    Then the email field receives focus and is interactable
+    And no element shift or error occurs

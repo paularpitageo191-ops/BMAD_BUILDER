@@ -1,36 +1,35 @@
 Feature: Negative Path Validation for DemoQA Elements Module
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
-  Scenario: AC1 – Email validation rejects invalid inputs
-    Given I navigate to the Text Box page
-    When I fill "Email" with "test@domain" and submit
-    Then I see a validation error on the email input
-    And the output section is not displayed
+  Background:
+    Given the user navigates to "https://demoqa.com/elements"
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
-  Scenario: AC2 – Web Tables blocks non-numeric Age and Salary
-    Given I navigate to the Web Tables page
-    And I open the registration modal
-    When I fill "Age" with "abc" and "Salary" with "12ab"
-    And I attempt to submit the registration form
-    Then the registration modal remains open
-    And no new record is added to the table
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC1
+  Scenario: Invalid email input triggers validation error and no output is displayed
+    When the user enters an invalid email "test@domain" in the Text Box email field
+    And the user clicks the "Submit" button in the Text Box section
+    Then a validation error is displayed on the email input field with CSS class "field-error" or similar
+    And the output section with id "output" is not visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
-  Scenario: AC3 – Radio Button "No" remains disabled
-    Given I navigate to the Radio Button page
-    Then the "No" radio button is disabled
-    When I click on the "No" radio button
-    Then the button remains disabled
-    And no feedback message appears
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC2
+  Scenario: Non-numeric Age value blocks Web Tables submission and modal stays open
+    Given the Web Tables modal is opened by clicking the "Add" button
+    When the user enters non-numeric value "abc" in the Age field
+    And the user attempts to submit the registration form by clicking the modal's "Submit" button
+    Then the modal remains open and the form is not submitted
+    And the Age field shows a validation warning/error
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
-  Scenario: AC4 – UI remains stable under overlay obstruction
-    Given I navigate to the Text Box page
-    When I inject an overlay element covering the page
-    And I scroll the "Full Name" input into view
-    Then I can interact with the "Full Name" input
-    And the page does not crash
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC3
+  Scenario: Disabled "No" radio button does not become selected on click
+    When the user clicks on the radio button with id "noRadio"
+    Then the "noRadio" element remains disabled
+    And no state change occurs (aria-checked or class "active" remains unchanged)
+
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC4
+  Scenario: UI remains stable and interactable under an overlay obstruction
+    Given an overlay (e.g., an ad or popup) appears on the page
+    When the user scrolls to the "Yes" radio button and clicks it
+    Then the "Yes" radio button becomes selected
+    And the "Yes" radio button remains visible and enabled after interaction
