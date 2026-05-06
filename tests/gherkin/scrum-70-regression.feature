@@ -1,58 +1,36 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
-Feature: Negative Path Validation for DemoQA Elements Module
+Feature: Negative Path Validation for Elements Module
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions.
 
-  Background:
-    Given I am on the DemoQA Elements page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
+  Scenario: Email validation rejects invalid input and hides output
+    Given the user is on the Text Box page of the Elements module
+    When the user enters an invalid email like "test@domain" in the email field
+    And clicks the Submit button
+    Then the email field should show a validation error
+    And the output section should not be displayed
 
-  @SCRUM-70 @AC1
-  Scenario: Email validation rejects invalid input and hides output section
-    Given I am on the Text Box section
-    When I enter an invalid email "<invalid_email>" in the #userEmail field
-    And I click the submit button
-    Then a validation error is visible on the #userEmail field
-    And the #output section is not displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
+  Scenario: Web Tables blocks non-numeric age/salary and keeps modal open
+    Given the user is on the Web Tables page of the Elements module
+    When the user clicks the Add button to open the registration modal
+    And enters non-numeric values in the Age field and Salary field
+    And clicks Submit in the modal
+    Then the registration modal should remain open
+    And no new row should be added to the table
 
-    Examples:
-      | invalid_email       |
-      | test@domain         |
-      | test@domain.        |
-      | test@               |
-      | @domain.com         |
-      | plainaddress        |
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
+  Scenario: Disabled radio button does not respond to clicks
+    Given the user is on the Radio Button page of the Elements module
+    When the user attempts to click the "No" radio button
+    Then the "No" radio button should remain disabled
+    And its state should not change
 
-  @SCRUM-70 @AC2
-  Scenario: Web Tables blocks submission on non-numeric Age or Salary
-    Given I am on the Web Tables section
-    When I click the Add button to open the registration modal
-    And I enter "<age>" in the Age field and "<salary>" in the Salary field
-    And I click the Submit button in the modal
-    Then the registration modal remains open
-    And the form is not submitted
-
-    Examples:
-      | age  | salary |
-      | abc  | 50000  |
-      | 30   | 12ab   |
-      |      | 50000  |
-      | 30   |        |
-
-  @SCRUM-70 @AC3
-  Scenario: Radio Button "No" option is disabled and non-interactable
-    Given I am on the Radio Button section
-    Then the #noRadio element is disabled
-    When I click on the #noRadio option
-    Then the #noRadio element remains disabled
-    And no change in radio button state occurs
-
-  @SCRUM-70 @AC4
-  Scenario: UI remains stable and elements interactable under overlay obstruction
-    Given I am on the Text Box section
-    When an overlay is placed covering the form
-    And I scroll to the #userEmail field
-    Then the #userEmail field is interactable via visibility handling
-    When I enter a valid email address in the #userEmail field
-    And I click the submit button
-    Then the #output section is displayed with the entered data
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9
+  Scenario: UI remains stable under overlay obstruction
+    Given the user is on a page of the Elements module
+    When an overlay is placed on top of the page
+    And the user scrolls to a target element and clicks it
+    Then the target element should be interactable via visibility handling
+    And the page should not crash

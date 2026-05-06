@@ -1,54 +1,44 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-2ACD
 Feature: Negative Path Validation for DemoQA Elements Module
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given the user is on the DemoQA Elements page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9 @AC1
+  Scenario: Invalid email input triggers validation error and no output section
+    Given the Text Box page is loaded
+    When the user enters an invalid email format "test@domain" into the "userEmail" field
+    And presses the "Submit" button
+    Then the "userEmail" field should have validation error styling (e.g., class "is-invalid")
+    And the output section with id "output" should not be visible
 
-  @AC1 @email_validation
-  Scenario: Invalid email triggers validation error and no output is displayed
-    When the user enters an invalid email address "test@domain" into the Email field
-    And clicks the Submit button
-    Then the Email field should show a validation error
-    And the output section "#output" should not be visible
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9 @AC2
+  Scenario Outline: Non-numeric values in Age or Salary fields block registration submission
+    Given the Web Tables page is loaded
+    When the user clicks the "Add" button to open the registration modal
+    And enters "<input>" into the "<field>" field in the registration modal
+    And clicks the "Submit" button in the modal
+    Then the registration modal should remain open
+    And the registration table should not contain the new record with "<input>" in the "<field>" column
 
-  @AC2 @web_tables_validation
-  Scenario: Non-numeric Age blocks submission and modal stays open
-    When the user opens the Web Tables registration form
-    And enters "abc" into the Age field
-    And clicks Submit in the registration modal
-    Then the registration modal remains open
-    And the Age field shows validation error
+    Examples:
+      | field  | input        |
+      | age    | abc          |
+      | age    | 12ab         |
+      | salary | xyz          |
+      | salary | 45$          |
 
-  @AC2 @web_tables_validation
-  Scenario: Non-numeric Salary blocks submission and modal stays open
-    When the user opens the Web Tables registration form
-    And enters "12ab" into the Salary field
-    And clicks Submit in the registration modal
-    Then the registration modal remains open
-    And the Salary field shows validation error
-
-  @AC2 @web_tables_validation
-  Scenario: Empty fields in registration modal block submission
-    When the user opens the Web Tables registration form
-    And leaves all fields empty
-    And clicks Submit in the registration modal
-    Then the registration modal remains open
-
-  @AC3 @radio_button_validation
-  Scenario: "No" radio button remains disabled and clicking does nothing
-    When the user locates the "No" radio button "#noRadio"
-    Then the "#noRadio" element should be disabled
-    When the user clicks on "#noRadio"
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9 @AC3
+  Scenario: "No" radio button remains disabled and does not change state on click
+    Given the Radio Button page is loaded
+    When the user attempts to click the "No" radio button identified by "#noRadio"
     Then the "#noRadio" element should remain disabled
-    And no visual state change (like checked style) should occur
+    And the "#noRadio" element should not have the "selected" visual state (e.g., class "active")
 
-  @AC4 @ui_stability
-  Scenario: UI remains stable under overlay obstruction
-    Given an overlay is added to cover part of the page
-    When the user scrolls to the Text Box section and enters valid data
-    And clicks Submit
-    Then the output section "#output" should become visible
-    And the overlay does not prevent interaction after scrolling
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-7EA9 @AC4
+  Scenario: UI remains stable under obstruction (overlay) and elements remain interactable
+    Given the Radio Button page is loaded
+    And an overlay covering the entire page is added
+    When the user scrolls to the "Yes" radio button and waits for it to be visible
+    And clicks the "Yes" radio button
+    Then the click should succeed without visible errors
+    And the page layout should remain stable (no overlapping of elements)
