@@ -1,35 +1,30 @@
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given the user navigates to "https://demoqa.com/elements"
+  Scenario: AC1 - Email validation blocks invalid input and hides output section
+    Given the user is on the Elements page
+    When the user enters an invalid email "test@domain" into the #userEmail field
+    And clicks the Submit button
+    Then the #userEmail field displays a validation error
+    And the #output section is not visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC1
-  Scenario: Invalid email input triggers validation error and no output is displayed
-    When the user enters an invalid email "test@domain" in the Text Box email field
-    And the user clicks the "Submit" button in the Text Box section
-    Then a validation error is displayed on the email input field with CSS class "field-error" or similar
-    And the output section with id "output" is not visible
+  Scenario: AC2 - Non-numeric Age or Salary prevents Web Tables submission
+    Given the user has opened the Registration modal in the Web Tables section
+    When the user enters "abc" into the Age field
+    And enters "12ab" into the Salary field
+    And clicks the Submit button within the modal
+    Then the registration modal remains open
+    And no new record appears in the table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC2
-  Scenario: Non-numeric Age value blocks Web Tables submission and modal stays open
-    Given the Web Tables modal is opened by clicking the "Add" button
-    When the user enters non-numeric value "abc" in the Age field
-    And the user attempts to submit the registration form by clicking the modal's "Submit" button
-    Then the modal remains open and the form is not submitted
-    And the Age field shows a validation warning/error
+  Scenario: AC3 - #noRadio button remains disabled and unresponsive
+    Given the user is on the Radio Button section
+    When the user attempts to click the #noRadio element
+    Then the #noRadio element is still disabled
+    And its checked property remains false
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC3
-  Scenario: Disabled "No" radio button does not become selected on click
-    When the user clicks on the radio button with id "noRadio"
-    Then the "noRadio" element remains disabled
-    And no state change occurs (aria-checked or class "active" remains unchanged)
-
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @AC4
-  Scenario: UI remains stable and interactable under an overlay obstruction
-    Given an overlay (e.g., an ad or popup) appears on the page
-    When the user scrolls to the "Yes" radio button and clicks it
-    Then the "Yes" radio button becomes selected
-    And the "Yes" radio button remains visible and enabled after interaction
+  Scenario: AC4 - UI remains interactable under overlay obstruction
+    Given the page may contain an overlay
+    When the test scrolls to the #submit button in the Text Box section
+    And clicks the #submit button
+    Then the click action is performed successfully
+    And the element is interactable via scroll and visibility handling

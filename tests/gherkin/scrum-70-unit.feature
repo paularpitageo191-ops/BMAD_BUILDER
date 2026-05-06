@@ -1,33 +1,29 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @EmailValidation
 Feature: Negative Path Validation for DemoQA Elements Module
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+  Scenario: AC1 - Email validation rejects invalid email and hides output
+    Given I am on the DemoQA Text Box page
+    When I enter an invalid email "test@domain" into the email field
+    And I click the submit button
+    Then I should see a validation error on the #userEmail field
+    And the output section #output should not be displayed
 
-  Scenario: AC1 – Email validation rejects invalid email and hides output
-    Given the user is on the Text Box page
-    When the user enters an invalid email "test@domain" in the email field
-    And the user clicks the submit button
-    Then the email field shows a validation error class
-    And the output section is not visible
+  Scenario: AC2 - Web Tables reject non-numeric Age/Salary
+    Given I am on the DemoQA Web Tables page
+    When I click the "Add" button to open registration modal
+    And I enter non-numeric values in Age and Salary fields
+    And I click the submit button in the modal
+    Then the registration modal should remain open
+    And the record should not be added to the table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @WebTables
-  Scenario: AC2 – Non-numeric inputs in Age or Salary block submission and keep modal open
-    Given the user is on the Web Tables page
-    When the user clicks the Add button to open the registration modal
-    And the user enters non-numeric value "abc" in the Age field
-    And the user enters non-numeric value "12ab" in the Salary field
-    And the user clicks the Submit button
-    Then the registration modal remains open
+  Scenario: AC3 - "No" radio button remains disabled
+    Given I am on the DemoQA Radio Buttons page
+    Then the "No" radio button should be disabled
+    When I attempt to click the "No" radio button
+    Then the "No" radio button should still be disabled
+    And no state change should occur
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @RadioButton
-  Scenario: AC3 – "No" radio button is disabled and cannot be interacted with
-    Given the user is on the Radio Button page
-    When the user inspects the "No" option
-    Then the "No" radio button is disabled
-    When the user clicks on the "No" radio button
-    Then the "No" radio button remains disabled
-
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8 @UIStability
-  Scenario: AC4 – UI remains stable under obstruction and elements remain interactable
-    Given the user is on the Text Box page
-    When an overlay is added to the page
-    Then the submit button is still visible and enabled after scrolling
-    And the submit button can be clicked successfully
+  Scenario: AC4 - UI remains stable under overlay obstruction
+    Given I am on a DemoQA page with an overlay element
+    When the overlay is present
+    Then elements should remain interactable via scroll or visibility handling
+    And the page layout should not break

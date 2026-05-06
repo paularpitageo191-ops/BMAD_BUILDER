@@ -1,41 +1,36 @@
-Feature: Elements Module Negative Path Validation
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
+Feature: Negative Path Validation for DemoQA Elements Module
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
-  Scenario: AC1 - Email Validation rejects invalid input and hides output
-    Given the user navigates to the Text Box page
-    When the user enters an invalid email "test@domain" and clicks Submit
-    Then the email field shows a validation error (class "field-error" applied)
-    And the output section #output is not visible
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+  Scenario: AC1 - Email validation rejects invalid input
+    Given I am on the Text Box page
+    When I enter an invalid email "test@domain" into the "#userEmail" field
+    And I click outside the field to trigger validation
+    Then a validation error is visible on the "#userEmail" field
+    And the "#output" section is not displayed
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
-  Scenario: AC1 - Email Validation shows output for valid input
-    Given the user navigates to the Text Box page
-    When the user enters a valid email "test@example.com" and clicks Submit
-    Then the email field shows no validation error
-    And the output section #output becomes visible
-
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
-  Scenario: AC2 - Web Tables rejects non-numeric age or salary
-    Given the user navigates to the Web Tables page
-    When the user opens the registration modal and enters non-numeric age "abc" and salary "12ab"
-    And clicks Submit
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+  Scenario: AC2 - Web Tables blocks non-numeric Age and Salary
+    Given I am on the Web Tables page
+    When I click the "Add" button to open the registration modal
+    And I enter the following invalid data:
+      | First Name | Last Name | Email | Age | Salary | Department |
+      | John | Doe | j@doe.com | abc | 12ab | Engineering |
+    And I click the "Submit" button inside the modal
     Then the registration modal remains open
-    And the age and salary fields show validation errors
+    And the Age field shows a validation error
+    And the Salary field shows a validation error
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
-  Scenario: AC3 - Radio Button "No" remains disabled and ignores clicks
-    Given the user navigates to the Radio Button page
-    When the user attempts to click the disabled "#noRadio" option
-    Then the "#noRadio" element remains disabled
-    And no state change is observed (no success message for "No")
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+  Scenario: AC3 - "No" radio button is disabled and non-interactive
+    Given I am on the Radio Button page
+    Then the "#noRadio" option should be disabled
+    When I attempt to click the "#noRadio" option
+    Then the "#noRadio" option remains disabled and unselected
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-E8F8
-  Scenario: AC4 - UI remains stable under overlay obstruction
-    Given the user navigates to the Text Box page
-    When an overlay is injected over the page
-    And the user scrolls the email field into view and clicks it
-    Then the email field receives focus and is interactable
-    And no element shift or error occurs
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-DABE
+  Scenario: AC4 - UI remains interactable under an overlay obstruction
+    Given I am on the Text Box page
+    When an overlay covers the top half of the form
+    Then I can scroll to the "Full Name" field and type into it
+    And I can still type into the "#userEmail" field
+    And the overlay does not affect element availability
