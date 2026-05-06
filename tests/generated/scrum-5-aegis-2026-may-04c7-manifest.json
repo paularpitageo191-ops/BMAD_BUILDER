@@ -1,0 +1,55 @@
+{
+  "forensic_id": "AEGIS-2026-MAY-04C7",
+  "ticket_key": "SCRUM-5",
+  "ticket_summary": "Customer Onboarding with KYC/KRA & SEC Compliance Validation",
+  "exported_at": "2026-05-06T16:19:49.246255",
+  "framework": "playwright",
+  "language": "typescript",
+  "files": [
+    {
+      "agent": "Unit",
+      "feature": "tests/gherkin/scrum-5-unit.feature",
+      "code": "tests/generated/scrum-5-unit.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "API",
+      "feature": "tests/gherkin/scrum-5-api.feature",
+      "code": "tests/generated/scrum-5-api.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Functional",
+      "feature": "tests/gherkin/scrum-5-functional.feature",
+      "code": "tests/generated/scrum-5-functional.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "UI",
+      "feature": "tests/gherkin/scrum-5-ui.feature",
+      "code": "tests/generated/scrum-5-ui.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Regression",
+      "feature": "tests/gherkin/scrum-5-regression.feature",
+      "code": "tests/generated/scrum-5-regression.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    }
+  ]
+}
