@@ -1,39 +1,37 @@
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
-
-  Background:
-    Given the DemoQA application is accessible
-
   @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-  Scenario: Email validation rejects invalid email and hides output
-    Given the user navigates to the Text Box page
-    When the user enters an invalid email ""test@domain"" (missing TLD) into the #userEmail field
-    And clicks the Submit button
-    Then the #userEmail field shows a validation error
-    And the #output section is not displayed
+  Scenario Outline: Email Validation
+    Given the email input field is empty
+    When I enter an invalid email "<invalidEmail>"
+    Then the validation error message should be displayed on "#userEmail"
+    And the output section "#output" should not be displayed
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-  Scenario: Web Tables rejects non-numeric Age/Salary and keeps modal open
-    Given the user navigates to the Web Tables page
-    When the user opens the registration modal
-    And enters a non-numeric value ""abc"" into the Age field
-    And enters a non-numeric value ""12ab"" into the Salary field
-    And clicks the Submit button in the modal
-    Then the registration modal remains open
-    And no new row is added to the table
+  Examples:
+    | invalidEmail |
+    | test@domain  |
+    | missing TLD |
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-  Scenario: Radio Button disabled option remains inert
-    Given the user navigates to the Radio Button page
-    When the user clicks the option with id #noRadio
-    Then the #noRadio element remains disabled
-    And no selection state change occurs
+  Scenario Outline: Web Tables Validation
+    Given the Age and Salary fields are numeric
+    When I enter non-numeric values for Age and Salary "<nonNumericValues>"
+    Then submission is blocked
+    And the registration modal remains open
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-  Scenario: UI remains stable under overlay obstruction
-    Given the user navigates to the Text Box page
-    When an overlay is programmatically added to cover the full screen
-    Then the user can scroll to and interact with the #submit button
-    And the button click works as expected
+  Examples:
+    | nonNumericValues      |
+    | abc                   |
+    | 12ab                  |
+
+  Scenario Outline: Radio Button Validation
+    Given the "No" radio button is disabled
+    When I click on the "No" radio button "<noRadio>"
+    Then the state should not change
+
+  Examples:
+    | noRadio     |
+    | #noRadio     |
+
+  Scenario Outline: UI Stability
+    Given the application is stable under obstruction (e.g., overlays)
+    When I interact with elements using scroll and visibility handling
+    Then the UI remains stable

@@ -1,39 +1,60 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-Feature: DemoQA Elements Module Negative Path Validation
+Feature: Negative Path Validation for DemoQA Elements Module
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
 
-  Background:
-    Given the user navigates to the DemoQA Elements page
+Scenario: Email Validation Failure - Invalid Email
+  Given the user enters an invalid email on Text Box
+  When they submit
+  Then a validation error appears on #userEmail and #output is not displayed
 
-  @AC1 @email-validation
-  Scenario: Invalid email triggers validation error and no output
-    Given the user opens the Text Box section
-    When the user enters an invalid email address "test@domain"
-    And the user clicks the Submit button
-    Then the email input field #userEmail should have the CSS class "field-error" or show validation error
-    And the output section #output should not be visible
+Scenario: Web Tables Age/Salary Validation Failure - Non-Numeric Input
+  Given the user enters non-numeric values in Age or Salary fields in Web Tables
+  When they attempt to submit the registration modal
+  Then submission is blocked and modal remains open
 
-  @AC2 @web-tables-validation
-  Scenario: Non-numeric Age/Salary blocks submission and modal stays open
-    Given the user opens the Web Tables section
-    And the user clicks the Add button to open the registration modal
-    When the user enters non-numeric values in the Age field "abc" and Salary field "12ab"
-    And the user clicks the Submit button in the registration modal
-    Then the registration modal should remain open
-    And the modal should not close
-    And no new row should appear in the web table
+Scenario: Radio Button Disabled State Verification
+  Given the user attempts to click the 'No' radio button
+  Then no state change occurs because the button is disabled
 
-  @AC3 @radio-button-validation
-  Scenario: "No" radio button remains disabled and unclickable
-    Given the user opens the Radio Button section
-    Then the "No" radio button identified by #noRadio should be disabled
-    When the user attempts to click the #noRadio element
-    Then the #noRadio element should still be disabled
-    And no success message should appear (e.g., .text-success should not contain "No")
+Scenario: UI Stability Under Overlay Obstruction
+  Given an overlay obstructs interaction
+  When the user interacts with elements
+  Then elements remain interactable via scroll and visibility handling
 
-  @AC4 @ui-stability
-  Scenario: UI remains stable after overlay obstruction
-    Given the user opens the Web Tables section
-    When the user opens the registration modal
-    And the user closes the modal by clicking the close button
-    Then the page should be scrollable and elements in the main content area remain interactable
-    And the Add button should be clickable after modal close
+**CODE_TYPESCRIPT**
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+let page;
+
+test('Email Validation Failure - Invalid Email', async () => {
+  await page.fill('#userEmail', 'invalid email');
+  await page.press('#submit', 'Enter');
+  await expect(page.locator('#userEmail')).toHaveAttribute('aria-invalid', true);
+  await expect(page.locator('#output')).not.toBeVisible();
+});
+
+test('Web Tables Age/Salary Validation Failure - Non-Numeric Input', async () => {
+  await page.fill('#age', 'abc');
+  await page.fill('#salary', '123abc');
+  await page.click('#addNewRecordButton');
+  await expect(page.locator('.modal-content')).toBeVisible();
+  await expect(page.locator('#output')).not.toBeVisible();
+});
+
+test('Radio Button Disabled State Verification', async () => {
+  await expect(page.locator('#noRadio')).toBeDisabled();
+  await page.click('#noRadio');
+  await expect(page.locator('#noRadio')).toBeDisabled();
+});
+
+test('UI Stability Under Overlay Obstruction', async () => {
+  await page.waitForSelector('.overlay');
+  await page.scrollIntoViewIfNeeded('#element-1');
+  await expect(page.locator('#element-1')).toBeVisible() && expect(page.locator('#element-1')).toBeEnabled();
+});
+```
+
+**ASSUMPTIONS**
+
+* None

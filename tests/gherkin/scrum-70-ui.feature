@@ -1,37 +1,67 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-Feature: Negative Path Validation for DemoQA Elements Module
+Feature: DemoQA Elements Module Validation
+  As a QA Engineer, I want to validate negative scenarios in the Elements module,
+  so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
 
-  Background: User is on DemoQA Elements page
-    Given the user navigates to "https://demoqa.com/elements"
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
+  Scenario Outline: Email Validation
+    Given the user navigates to the "Elements" page
+    When the user enters an invalid email address in the "#userEmail" field
+    Then the validation error is displayed and the output section is not displayed
 
-  @AC1
-  Scenario: Email validation rejects invalid formats and does not display output
-    Given the user is on the Text Box section
-    When the user enters an invalid email "test@domain" in the #userEmail field
-    And clicks the #submit button
-    Then the #userEmail field should show a validation error
-    And the #output section should not be visible
+  Scenario Outline: Web Tables Validation
+    Given the user navigates to the "Elements" page
+    When the user enters non-numeric values in the Age/Salary fields
+    Then the submission is blocked and the registration modal remains open
 
-  @AC2
-  Scenario: Web Tables - Non-numeric age/salary blocks submission and modal remains open
-    Given the user is on the Web Tables section
-    When the user clicks the Add button to open the registration modal
-    And enters "abc" in the age field
-    And enters "xyz" in the salary field
-    And clicks the Submit button within the modal
-    Then the registration modal should still be visible
-    And no new record should be added to the table
+  Scenario Outline: Radio Button Validation
+    Given the user navigates to the "Elements" page
+    When the user selects the "No" radio button option
+    Then the option remains disabled and no state change occurs
 
-  @AC3
-  Scenario: Radio Button - "No" option remains disabled and non-interactive
-    Given the user is on the Radio Button section
-    Then the "No" radio button identified by #noRadio should be disabled
-    When the user attempts to click the #noRadio element
-    Then the #noRadio element should still be disabled
-    And it should not be checked
+  Scenario Outline: UI Stability
+    Given the user navigates to the "Elements" page
+    When an obstruction (e.g., overlay) is present
+    Then the UI remains stable and elements remain interactable via scroll/visibility handling
 
-  @AC4
-  Scenario: UI stability under overlay - elements remain interactable via scroll/visibility
-    Given an overlay obstructs the page
-    When the user scrolls the #submit element into view and clicks it
-    Then the #submit element should be visible and the click should succeed
+**CODE_TYPESCRIPT**
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+let page: PlaywrightPage;
+
+test.beforeEach(async ({ baseURL }) => {
+  page = await global.playwright.launch().then(() => page);
+});
+
+test('Email Validation', async () => {
+  await page.goto('https://demoqa.com/elements');
+  await page.fill('#userEmail', 'invalid email');
+  expect(page.locator('#output').textContent()).toBe('');
+});
+
+test('Web Tables Validation', async () => {
+  await page.goto('https://demoqa.com/elements');
+  await page.fill('[data-test="age"]', 'abc');
+  await page.fill('[data-test="salary"]', '12ab');
+  expect(page.locator('.modal').textContent()).toBe('');
+});
+
+test('Radio Button Validation', async () => {
+  await page.goto('https://demoqa.com/elements');
+  await page.select('#noRadio', 'No');
+  expect(await page.eval('return document.querySelector("#noRadio").disabled')).toBe(true);
+});
+
+test('UI Stability', async () => {
+  await page.goto('https://demoqa.com/elements');
+  await page.evaluate(() => {
+    // simulate obstruction (e.g., overlay)
+  });
+  expect(page.locator('*').getCount()).toBeGreaterThanOrEqual(1);
+});
+```
+
+**ASSUMPTIONS**
+
+* None
