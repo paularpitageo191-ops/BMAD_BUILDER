@@ -1,37 +1,39 @@
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
 Feature: Negative Path Validation for DemoQA Elements Module
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-C488
-  Scenario Outline: Email Validation
-    Given the email input field is empty
-    When I enter an invalid email "<invalidEmail>"
-    Then the validation error message should be displayed on "#userEmail"
-    And the output section "#output" should not be displayed
 
-  Examples:
-    | invalidEmail |
-    | test@domain  |
-    | missing TLD |
+  Background:
+    Given the user is on the DemoQA Elements page
 
-  Scenario Outline: Web Tables Validation
-    Given the Age and Salary fields are numeric
-    When I enter non-numeric values for Age and Salary "<nonNumericValues>"
-    Then submission is blocked
-    And the registration modal remains open
+  @AC1
+  Scenario: Email validation rejects invalid email and hides output
+    Given the user navigates to the Text Box section
+    When the user enters an invalid email address "test@domain"
+    And the user presses the "Submit" button
+    Then a validation error is displayed on the "#userEmail" field
+    And the output section "#output" is not visible
 
-  Examples:
-    | nonNumericValues      |
-    | abc                   |
-    | 12ab                  |
+  @AC2
+  Scenario: Web Tables rejects non-numeric Age and Salary and keeps modal open
+    Given the user navigates to the Web Tables section
+    When the user clicks the "Add" button to open the registration modal
+    And the user fills the Age field with "abc"
+    And the user fills the Salary field with "12ab"
+    And the user clicks the "Submit" button in the modal
+    Then the registration modal remains open
+    And no new row is added to the table
 
-  Scenario Outline: Radio Button Validation
-    Given the "No" radio button is disabled
-    When I click on the "No" radio button "<noRadio>"
-    Then the state should not change
+  @AC3
+  Scenario: Radio Button "No" option remains disabled and unresponsive
+    Given the user navigates to the Radio Button section
+    Then the "#noRadio" option is disabled
+    When the user clicks on the "#noRadio" label
+    Then the "#noRadio" option remains disabled
+    And the radio button state does not change
 
-  Examples:
-    | noRadio     |
-    | #noRadio     |
-
-  Scenario Outline: UI Stability
-    Given the application is stable under obstruction (e.g., overlays)
-    When I interact with elements using scroll and visibility handling
-    Then the UI remains stable
+  @AC4
+  Scenario: UI remains stable under overlay obstruction
+    Given the user navigates to the Text Box section
+    When an overlay is placed over the page
+    Then the user can scroll to the permanent radio button section
+    And the radio button elements remain interactable
+    And no unintended UI shift occurs

@@ -1,27 +1,32 @@
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer,
-  I want to validate negative scenarios in the Elements module,
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions.
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
+  Scenario: AC1 – Email Validation triggers error for invalid email
+    Given I am on the DemoQA Elements page
+    When I enter the invalid email "test@domain" in the #userEmail field
+    And I click the #submit button in the Text Box section
+    Then the #userEmail field shows a validation error
+    And the #output section is not displayed
 
-Scenario: Email Validation Failure - Invalid Email Input Triggers Validation Error #userEmail (AC1)
-  Given I am on the "Elements" page
-  When I enter an invalid email address "#userEmail"
-  Then the validation error is displayed for "#userEmail"
-  And the output section "#output" is not displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
+  Scenario: AC2 – Web Tables validation blocks submission for non-numeric Age
+    Given I am on the DemoQA Elements page
+    When I click the #addNewRecordButton to open the registration modal
+    And I enter "abc" in the #age field
+    And I click the #submit button in the registration modal
+    Then the registration modal remains open
+    And the submission is blocked
 
-Scenario: Web Tables Validation Failure - Non-Numeric Values in Age/Salary Fields Block Submission (AC2)
-  Given I am on the "Elements" page
-  When I enter non-numeric values in the "Age" and "Salary" fields
-  Then the submission is blocked
-  And the registration modal remains open
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
+  Scenario: AC3 – Radio Button disabled "No" option remains unchanged
+    Given I am on the DemoQA Elements page
+    When I click the #noRadio button
+    Then the #noRadio button remains disabled
+    And no state change occurs
 
-Scenario: Radio Button Validation Failure - "No" Option Remains Disabled, No State Change (AC3)
-  Given I am on the "Elements" page
-  When I select the "No" radio button
-  Then the radio button remains disabled
-  And there is no state change
-
-Scenario: UI Stability Under Obstruction (AC4)
-  Given I am on the "Elements" page with obstruction (e.g., overlays)
-  When I interact with the elements
-  Then the UI remains stable and interactive
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
+  Scenario: AC4 – UI Stability under overlay obstruction
+    Given I am on the DemoQA Elements page
+    When an overlay obstructs the Text Box form
+    And I scroll the #userEmail field into view
+    And I interact with the field using visibility handling
+    Then the UI remains stable and the field is interactable
