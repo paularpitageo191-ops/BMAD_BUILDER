@@ -1,48 +1,35 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-D03C
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
 Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given I am on the DemoQA Elements page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+  Scenario: Invalid email shows validation error and hides output
+    Given the user is on the Elements page
+    When the user enters an invalid email "test@domain" in the email field
+    And clicks the Submit button
+    Then the email field should have a validation error class
+    And the output section should not be visible
 
-  Scenario: AC1 – Invalid email shows validation error and no output
-    Given I am on the Text Box section
-    When I enter an invalid email "test@domain" in the email field
-    And I click the Submit button
-    Then the email field should show a validation error
-    And the output section should not be displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+  Scenario: Non-numeric age and salary block submission and modal stays open
+    Given the user is on the Elements page
+    When the user clicks the Add button to open registration modal
+    And enters non-numeric age "abc" and salary "12ab"
+    And clicks the Submit button in the modal
+    Then the registration modal should remain open
+    And no new row should appear in the table
 
-  Scenario: AC1 – Missing TLD email also triggers validation
-    Given I am on the Text Box section
-    When I enter "invalid@" in the email field
-    And I click the Submit button
-    Then the email field should show a validation error
-
-  Scenario: AC2 – Non-numeric Age blocks Web Tables submission
-    Given the Web Tables registration modal is open
-    When I enter "abc" in the Age field
-    And I click the Submit button in the modal
-    Then the modal should remain open
-    And the Age field should still contain "abc"
-
-  Scenario: AC2 – Non-numeric Salary blocks Web Tables submission
-    Given the Web Tables registration modal is open
-    When I enter "12ab" in the Salary field
-    And I click the Submit button in the modal
-    Then the modal should remain open
-    And the Salary field should still contain "12ab"
-
-  Scenario: AC3 – No radio button is disabled and unclickable
-    Given I am on the Radio Button section
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+  Scenario: No radio button is disabled and cannot be interacted with
+    Given the user is on the Elements page
     Then the "No" radio button should be disabled
-    When I attempt to click the "No" radio button
-    Then it should remain disabled
-    And its state should not change
+    When the user clicks the "No" radio button
+    Then the "No" radio button should remain disabled
+    And the radio button group should not indicate any selection change
 
-  Scenario: AC4 – UI remains stable under overlay obstruction
-    Given an overlay is covering the page
-    When I scroll to the email field
-    And I enter a valid email and click Submit using visibility handling
-    Then the form submission should succeed and output should be displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+  Scenario: UI remains stable under obstruction using scroll and visibility handling
+    Given the user is on the Elements page
+    When the user scrolls the email field into view
+    Then the email field should be visible and enabled
+    And the user can type text into the email field without errors
+    And the Submit button remains clickable
