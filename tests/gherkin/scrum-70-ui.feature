@@ -1,35 +1,36 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
-  Scenario: Invalid email shows validation error and hides output
-    Given the user is on the Elements page
-    When the user enters an invalid email "test@domain" in the email field
+  Background:
+    Given the user is on the DemoQA Elements page
+
+  @AC1
+  Scenario: Email field rejects invalid input and output section is hidden
+    When the user enters invalid email "test@domain" into the Email field
     And clicks the Submit button
-    Then the email field should have a validation error class
-    And the output section should not be visible
+    Then the Email field should show a validation error
+    And the Output section should not be displayed
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
-  Scenario: Non-numeric age and salary block submission and modal stays open
-    Given the user is on the Elements page
-    When the user clicks the Add button to open registration modal
-    And enters non-numeric age "abc" and salary "12ab"
-    And clicks the Submit button in the modal
+  @AC2
+  Scenario: Web Tables reject non-numeric Age and Salary values
+    Given the user navigates to the Web Tables section
+    When the user clicks "Add" to open the registration modal
+    And enters "abc" into the Age field
+    And enters "12ab" into the Salary field
+    And clicks "Submit" in the modal
     Then the registration modal should remain open
-    And no new row should appear in the table
+    And validation errors should be visible on the Age and Salary fields
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
-  Scenario: No radio button is disabled and cannot be interacted with
-    Given the user is on the Elements page
+  @AC3
+  Scenario: Disabled radio button "No" cannot be selected or change state
+    Given the user is on the Radio Button section
     Then the "No" radio button should be disabled
-    When the user clicks the "No" radio button
-    Then the "No" radio button should remain disabled
-    And the radio button group should not indicate any selection change
+    When the user attempts to click the "No" radio button
+    Then no state change should occur (selection remains unchanged)
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
-  Scenario: UI remains stable under obstruction using scroll and visibility handling
-    Given the user is on the Elements page
-    When the user scrolls the email field into view
-    Then the email field should be visible and enabled
-    And the user can type text into the email field without errors
-    And the Submit button remains clickable
+  @AC4
+  Scenario: UI remains stable and interactable under an overlay
+    When an overlay (fixed banner) is added to the page
+    Then the user can scroll to view all elements
+    And elements such as the Email field remain clickable and fillable
+    And no unexpected behavior occurs during interaction

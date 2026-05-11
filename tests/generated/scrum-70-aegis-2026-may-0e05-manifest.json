@@ -1,0 +1,55 @@
+{
+  "forensic_id": "AEGIS-2026-MAY-0E05",
+  "ticket_key": "SCRUM-70",
+  "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
+  "exported_at": "2026-05-11T10:03:33.829912",
+  "framework": "playwright",
+  "language": "typescript",
+  "files": [
+    {
+      "agent": "Unit",
+      "feature": "tests/gherkin/scrum-70-unit.feature",
+      "code": "tests/generated/scrum-70-unit.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Api",
+      "feature": "tests/gherkin/scrum-70-api.feature",
+      "code": "tests/generated/scrum-70-api.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Functional",
+      "feature": "tests/gherkin/scrum-70-functional.feature",
+      "code": "tests/generated/scrum-70-functional.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Ui",
+      "feature": "tests/gherkin/scrum-70-ui.feature",
+      "code": "tests/generated/scrum-70-ui.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "Regression",
+      "feature": "tests/gherkin/scrum-70-regression.feature",
+      "code": "tests/generated/scrum-70-regression.spec.ts",
+      "provider": "deepseek:deepseek-v4-flash",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    }
+  ]
+}

@@ -1,33 +1,36 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-13AF
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  Scenario: AC1 – Invalid email validation in Text Box
-    Given the user navigates to the DemoQA Text Box page
-    When the user enters an invalid email (e.g., "test@domain") into #userEmail
-    And clicks the Submit button
-    Then a validation error (e.g., red border or HTML5 message) appears on #userEmail
-    And the output section #output is not displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
+  Scenario: Email Validation - invalid email blocks output display
+    Given the user is on the DemoQA Text Box page
+    When the user enters an invalid email format (e.g., "test@domain") into the email field
+    And the user clicks the Submit button
+    Then the email field shows a validation error
+    And the output section (#output) is not displayed
 
-  Scenario: AC2 – Non-numeric Age/Salary blocks submission in Web Tables
-    Given the user navigates to the DemoQA Web Tables page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
+  Scenario: Web Tables Validation - non-numeric age/salary blocks submission
+    Given the user is on the DemoQA Web Tables page
     When the user clicks the Add button to open the registration modal
-    And fills First Name and Last Name with valid data
-    And fills the Age field with a non-numeric value (e.g., "abc")
-    And fills the Salary field with a non-numeric value (e.g., "12ab")
-    And clicks the Submit button
-    Then the registration modal remains open (visible)
-    And no new row is added to the table
+    And the user enters a non-numeric value (e.g., "abc") into the Age field
+    And the user enters a non-numeric value (e.g., "12ab") into the Salary field
+    And the user clicks the Submit button within the modal
+    Then the registration modal remains open
+    And the form is not submitted
 
-  Scenario: AC3 – Disabled Radio Button "No" remains non-interactable
-    Given the user navigates to the DemoQA Radio Button page
-    Then the radio option #noRadio is disabled
-    When the user attempts to click #noRadio
-    Then the disabled state of #noRadio is unchanged
-    And no change in the selected radio state is reflected on the page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
+  Scenario: Radio Button Validation - disabled "No" option remains unclickable
+    Given the user is on the DemoQA Radio Button page
+    When the user attempts to click the "No" radio button (#noRadio)
+    Then the radio button remains disabled
+    And no state change occurs
 
-  Scenario: AC4 – UI stability under obstruction (e.g., overlays)
-    Given the user navigates to any DemoQA Elements page
-    When an overlay (e.g., ad or injected element) partially blocks the view
-    Then all interactive elements can still be scrolled into view
-    And the user can interact with elements using Playwright's scrollIntoViewIfNeeded and force click
-    And no crash or unhandled exception occurs
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
+  Scenario: UI Stability under obstruction - elements remain interactable
+    Given the user is on the DemoQA Text Box page
+    When an obstructive overlay is injected over the page
+    And the user scrolls to and attempts to interact with the submit button
+    Then the submit button is clickable
+    And the user can enter text into the permanent address field
+    And the UI does not break or become unresponsive
