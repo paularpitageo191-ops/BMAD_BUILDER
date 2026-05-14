@@ -1,38 +1,37 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
 Feature: Negative Path Validation for DemoQA Elements Module
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
+  so that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  Background:
-    Given the user is on the DemoQA Elements page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC1
+  Scenario: Invalid email input triggers validation error and no output is displayed
+    Given the user is on the Text Box page of the Elements module
+    When the user enters an invalid email address (e.g., "test@domain")
+    And the user clicks the Submit button
+    Then an error class "field-error" or validation message is visible on the #userEmail input field
+    And the #output section is not displayed
 
-  Scenario: AC1 - Email validation with invalid input
-    When the user navigates to the Text Box page
-    And enters invalid email "test@domain" into the #userEmail field
-    And clicks the Submit button
-    Then a validation error is triggered on the #userEmail field
-    And the output section #output is not visible
-
-  Scenario: AC2 - Web Tables age field rejects non-numeric input
-    When the user navigates to the Web Tables page
-    And clicks the Add button to open the registration modal
-    And enters "abc" into the Age field
-    And clicks the Submit button
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC2
+  Scenario: Non-numeric Age blocks Web Tables registration submission
+    Given the user is on the Web Tables page of the Elements module
+    When the user clicks the Add button to open the registration modal
+    And the user enters non-numeric text (e.g., "abc") in the Age field
+    And the user enters valid data in all other required fields
+    And the user clicks the Submit button
     Then the registration modal remains open
-    And no new row is added to the table
+    And no new record is added to the table
 
-  Scenario: AC3 - Radio button "No" remains disabled
-    When the user navigates to the Radio Button page
-    Then the #noRadio option is disabled
-    When the user clicks on the #noRadio option
-    Then the #noRadio option remains disabled
-    And no success message is displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC3
+  Scenario: "No" radio button remains disabled and does not change state when clicked
+    Given the user is on the Radio Button page of the Elements module
+    Then the #noRadio element should have a "disabled" attribute or class
+    When the user attempts to click the #noRadio element
+    Then the element's state remains unchanged (no selection highlight, no message displayed)
 
-  Scenario: AC4 - UI stability under overlay obstruction
-    When the user navigates to the Text Box page
-    And a full‑screen overlay is injected into the page
-    Then the user should be able to interact with the #userEmail field via scroll or visibility handling
-    When the user enters a valid email "user@example.com"
-    And clicks the Submit button
-    Then the output section #output is visible
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC4
+  Scenario: UI remains stable and elements are interactable after an overlay is displayed and handled
+    Given the user is on the Text Box page of the Elements module
+    When an overlay is injected covering the page
+    And the user scrolls the email input field into view
+    Then the user can still type into the #userEmail field
+    And the visibility of #output remains unaffected after overlay removal

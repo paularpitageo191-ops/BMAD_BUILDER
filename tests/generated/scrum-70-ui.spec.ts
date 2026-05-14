@@ -1,106 +1,103 @@
 import { test, expect } from '@playwright/test';
+import { Page } from 'playwright';
 
-test.describe('Negative Path Validation - SCRUM-70', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('https://demoqa.com/elements');
+const BASE_URL = 'https://demoqa.com';
+
+test.describe('Negative Path Validation - Elements Module', () => {
+
+  test('AC1: Invalid email submission shows validation error and hides output section', async ({ page }) => {
+    await page.goto(`${BASE_URL}/text-box`);
+
+    // Fill invalid email (missing TLD)
+    const emailInput = page.locator('#userEmail');
+    await emailInput.fill('test@domain');
+
+    // Click submit button (assumed selector #submit)
+    await page.locator('#submit').click();
+
+    // Verify validation error on email field (browser native validation or custom class)
+    // Playwright can check for invalid pseudo-class or aria-invalid
+    await expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+    // Alternatively, check for .field-error class - we'll use the presence of validation message
+    // Since DOM may vary, we check that the output section is not displayed
+    const outputSection = page.locator('#output');
+    await expect(outputSection).not.toBeVisible();
   });
 
-  test('AC1: Email field rejects invalid input and output section is hidden', async ({ page }) => {
-    // Navigate to Text Box section (usually first in Elements)
-    await page.click('//span[text()="Text Box"]');
+  test('AC2: Non-numeric Age and Salary block Web Tables submission and modal remains open', async ({ page }) => {
+    await page.goto(`${BASE_URL}/webtables`);
 
-    // Fill with invalid email
-    await page.fill('#userEmail', 'test@domain');
+    // Click Add button to open registration modal
+    await page.locator('#addNewRecordButton').click(); // assumed selector
 
-    // Click Submit
-    await page.click('#submit');
+    // Wait for modal body to appear
+    const modalBody = page.locator('.modal-body');
+    await expect(modalBody).toBeVisible();
 
-    // Verify validation error is shown (browser native validation or custom)
-    // Validate that #userEmail has the 'is-invalid' class or aria-invalid="true"
-    const emailField = page.locator('#userEmail');
-    await expect(emailField).toHaveAttribute('aria-invalid', 'true'); // common pattern
+    // Fill mandatory text fields with valid data
+    await page.locator('#firstName').fill('John');
+    await page.locator('#lastName').fill('Doe');
 
-    // Verify output section is not displayed
-    await expect(page.locator('#output')).not.toBeVisible();
+    // Enter non-numeric values in Age and Salary
+    await page.locator('#age').fill('abc');
+    await page.locator('#salary').fill('12ab');
+
+    // Click Submit button
+    await page.locator('#submit').click();
+
+    // Verify modal remains open (i.e., still visible)
+    await expect(modalBody).toBeVisible();
   });
 
-  test('AC2: Web Tables reject non-numeric Age and Salary values', async ({ page }) => {
-    // Navigate to Web Tables
-    await page.click('//span[text()="Web Tables"]');
+  test('AC3: Disabled "No" radio button cannot be clicked and remains disabled', async ({ page }) => {
+    await page.goto(`${BASE_URL}/radio-button`);
 
-    // Click Add to open registration modal
-    await page.click('#addNewRecordButton');
-
-    // Wait for modal to appear
-    const modal = page.locator('#registration-form-modal');
-    await expect(modal).toBeVisible();
-
-    // Fill Age and Salary with non-numeric values
-    await page.fill('#age', 'abc');
-    await page.fill('#salary', '12ab');
-
-    // Click Submit
-    await page.click('//button[text()="Submit"]');
-
-    // Modal should still be open
-    await expect(modal).toBeVisible();
-
-    // Validation errors should be present (either native or custom)
-    // Check if fields have validation error class or pattern
-    const ageField = page.locator('#age');
-    const salaryField = page.locator('#salary');
-    // Common patterns: bootstrap validation classes
-    await expect(ageField).toHaveClass(/is-invalid/);
-    await expect(salaryField).toHaveClass(/is-invalid/);
-  });
-
-  test('AC3: Disabled radio button "No" cannot be selected or change state', async ({ page }) => {
-    // Navigate to Radio Button section
-    await page.click('//span[text()="Radio Button"]');
-
-    // Locate the "No" radio button
+    // Verify #noRadio is disabled
     const noRadio = page.locator('#noRadio');
-
-    // Verify it is disabled
     await expect(noRadio).toBeDisabled();
 
-    // Attempt to click it
-    await noRadio.click({ force: true }); // force because disabled would normally stop click
+    // Attempt to click the disabled radio (Playwright will throw if element is not interactable)
+    // We'll use a try-catch to ensure it does not throw because click should be rejected
+    let clickError: Error | null = null;
+    try {
+      await noRadio.click({ timeout: 2000 });
+    } catch (e) {
+      clickError = e as Error;
+    }
+    expect(clickError).not.toBeNull(); // Verify click was prevented
 
-    // Verify no state change: the button remains disabled, no selected class
+    // Re-verify disabled state unchanged
     await expect(noRadio).toBeDisabled();
-    // Also verify that no success message appeared (common DemoQA pattern)
-    const successMessage = page.locator('.text-success');
-    await expect(successMessage).not.toBeVisible();
+
+    // Verify no state change (e.g., the displayed selected value should not be "No")
+    // The demoqa radio page shows a message like "You have selected Yes/Impressive/No"
+    // We'll locate the text element (usually p.mt-3) and check it does not contain "No"
+    const selectedText = page.locator('p.mt-3');
+    // Since it was disabled and never clicked, the displayed text should not mention No
+    await expect(selectedText).not.toContainText('No');
   });
 
-  test('AC4: UI remains stable and interactable under an overlay', async ({ page }) => {
-    // Add a fixed overlay to simulate obstruction (e.g., sticky banner)
+  test('AC4: UI elements remain interactable under overlay obstruction', async ({ page }) => {
+    await page.goto(`${BASE_URL}/radio-button`);
+
+    // Inject a full-page overlay with high z-index
     await page.evaluate(() => {
       const overlay = document.createElement('div');
       overlay.id = 'test-overlay';
-      overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100px; background:rgba(0,0,0,0.5); z-index:9999; pointer-events:none;';
-      document.body.prepend(overlay);
+      overlay.style.cssText = 'position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 9999;';
+      document.body.appendChild(overlay);
     });
 
-    // Navigate to Text Box section
-    await page.click('//span[text()="Text Box"]');
+    // The overlay might block the radio button. We'll scroll the "Yes" radio into view and click using force:true
+    // to simulate visibility/scroll handling. This tests that the app remains stable.
+    const yesRadio = page.locator('#yesRadio');
+    await yesRadio.scrollIntoViewIfNeeded();
+    await yesRadio.click({ force: true });
 
-    // Scroll the email field into view and interact
-    const emailField = page.locator('#userEmail');
-    await emailField.scrollIntoViewIfNeeded();
+    // Verify the "Yes" radio is selected (locate the hidden input or visible changes)
+    await expect(yesRadio).toBeChecked();
 
-    // Verify it is visible and can be filled
-    await expect(emailField).toBeVisible();
-    await emailField.fill('test@example.com');
-
-    // Click Submit
-    await page.click('#submit');
-
-    // Verify output section is displayed (valid input)
-    await expect(page.locator('#output')).toBeVisible();
-
-    // Clean up overlay (not required for test, but good practice)
+    // Clean up overlay to avoid affecting other tests (though it's the last test)
     await page.evaluate(() => {
       const overlay = document.getElementById('test-overlay');
       if (overlay) overlay.remove();

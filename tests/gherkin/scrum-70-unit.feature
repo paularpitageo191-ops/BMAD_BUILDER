@@ -1,36 +1,50 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
 Feature: Negative Path Validation for DemoQA Elements Module
+  As a QA Engineer
+  I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
-  Scenario: Email Validation - invalid email blocks output display
-    Given the user is on the DemoQA Text Box page
-    When the user enters an invalid email format (e.g., "test@domain") into the email field
-    And the user clicks the Submit button
-    Then the email field shows a validation error
-    And the output section (#output) is not displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC1 - Email validation with invalid email format (missing TLD)
+    Given the user is on the Text Box page of the Elements module
+    When the user enters an invalid email "test@domain" in the #userEmail field
+    And clicks the #submit button
+    Then the #userEmail field shows a validation error
+    And the output section #output is not visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
-  Scenario: Web Tables Validation - non-numeric age/salary blocks submission
-    Given the user is on the DemoQA Web Tables page
-    When the user clicks the Add button to open the registration modal
-    And the user enters a non-numeric value (e.g., "abc") into the Age field
-    And the user enters a non-numeric value (e.g., "12ab") into the Salary field
-    And the user clicks the Submit button within the modal
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC1 - Email validation with empty email input
+    Given the user is on the Text Box page
+    When the user leaves the email field empty
+    And clicks the #submit button
+    Then the output section #output is not displayed
+
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC2 - Web Tables reject non-numeric value in Age field
+    Given the user is on the Web Tables page
+    And the registration modal is opened by clicking the Add button
+    When the user enters "abc" in the Age input field of the modal
+    And clicks the modal's Submit button
     Then the registration modal remains open
-    And the form is not submitted
+    And no new row is added to the web table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
-  Scenario: Radio Button Validation - disabled "No" option remains unclickable
-    Given the user is on the DemoQA Radio Button page
-    When the user attempts to click the "No" radio button (#noRadio)
-    Then the radio button remains disabled
-    And no state change occurs
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC2 - Web Tables reject non-numeric value in Salary field
+    Given the user is on the Web Tables page
+    And the registration modal is opened
+    When the user enters "12ab" in the Salary input field of the modal
+    And clicks the modal's Submit button
+    Then the registration modal remains open
+    And no new row is added to the web table
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
-  Scenario: UI Stability under obstruction - elements remain interactable
-    Given the user is on the DemoQA Text Box page
-    When an obstructive overlay is injected over the page
-    And the user scrolls to and attempts to interact with the submit button
-    Then the submit button is clickable
-    And the user can enter text into the permanent address field
-    And the UI does not break or become unresponsive
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC3 - Radio Button "No" option is disabled and non-interactable
+    Given the user is on the Radio Button page
+    When the user inspects the #noRadio element
+    Then the #noRadio element is disabled
+    And clicking #noRadio does not change its checked state
+
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
+  Scenario: AC4 - UI remains stable under obstruction (overlay)
+    Given the user is on any Elements page with an overlay present
+    When the user scrolls a target element into view
+    Then the element remains interactable and can be clicked successfully

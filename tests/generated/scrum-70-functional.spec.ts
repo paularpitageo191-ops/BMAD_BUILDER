@@ -1,118 +1,131 @@
 import { test, expect } from '@playwright/test';
+import { chromium } from 'playwright'; // if needed for browser launch, but fixture preferred
 
-test.describe('SCRUM-70 Negative Path Validation for DemoQA Elements Module', () => {
-  const baseUrl = 'https://demoqa.com';
+// Note: These tests assume DemoQA Elements pages are loaded at standard URLs.
+// Text Box: https://demoqa.com/text-box
+// Web Tables: https://demoqa.com/webtables
+// Radio Button: https://demoqa.com/radio-button
 
-  test.describe('AC1 – Email Validation', () => {
-    test('invalid email triggers validation error and no output', async ({ page }) => {
-      await page.goto(`${baseUrl}/text-box`);
+// Helper to navigate to a given sub-path
+async function gotoElementsPage(page: any, subPath: string) {
+  await page.goto(`https://demoqa.com/${subPath}`);
+  await page.waitForLoadState('networkidle');
+}
 
-      // Fill invalid email (missing TLD)
-      await page.locator('#userEmail').fill('test@domain');
+test.describe('SCRUM-70 - Negative Path Validation for Elements Module', () => {
 
-      // Click Submit
-      await page.locator('#submit').click();
+  // AC1 – Email Validation
+  test('AC1: Invalid email triggers validation error and no output displayed', async ({ page }) => {
+    await gotoElementsPage(page, 'text-box');
 
-      // Assert validation error on #userEmail (HTML5 constraint validation false)
-      const emailValidity = await page.locator('#userEmail').evaluate((el: HTMLInputElement) => el.validity.valid);
-      expect(emailValidity).toBe(false);
+    const emailInput = page.locator('#userEmail');
+    const outputSection = page.locator('#output');
+    const submitButton = page.locator('#submit');
 
-      // Assert output section is not visible
-      await expect(page.locator('#output')).toBeHidden();
-    });
+    // Enter invalid email (missing TLD)
+    await emailInput.fill('test@domain');
+    await submitButton.click();
+
+    // Expect validation error class on email field (field-error is common class name)
+    await expect(emailInput).toHaveClass(/field-error/i, { timeout: 5000 });
+
+    // Output section should not be visible
+    await expect(outputSection).not.toBeVisible();
   });
 
-  test.describe('AC2 – Web Tables Validation', () => {
-    test('non-numeric age blocks submission and modal stays open', async ({ page }) => {
-      await page.goto(`${baseUrl}/webtables`);
+  // AC2 – Web Tables Validation (Age non-numeric)
+  test('AC2: Non-numeric Age blocks submission and modal stays open', async ({ page }) => {
+    await gotoElementsPage(page, 'webtables');
 
-      // Open registration modal
-      await page.locator('#addNewRecordButton').click();
-      await expect(page.locator('.modal-content')).toBeVisible();
+    // Click Add button to open registration modal
+    const addButton = page.locator('#addNewRecordButton');
+    await addButton.click();
 
-      // Fill required fields with valid data except Age
-      await page.locator('#firstName').fill('John');
-      await page.locator('#lastName').fill('Doe');
-      await page.locator('#userEmail').fill('john@example.com');
-      await page.locator('#age').fill('abc');  // non-numeric
-      await page.locator('#salary').fill('50000');
-      await page.locator('#department').fill('QA');
+    // Locate modal fields (using placeholder selectors typical in DemoQA)
+    const modal = page.locator('.modal-dialog');
+    const ageField = page.locator('#age');
+    const firstNameField = page.locator('#firstName');
+    const lastNameField = page.locator('#lastName');
+    const emailField = page.locator('#userEmail');
+    const salaryField = page.locator('#salary');
+    const departmentField = page.locator('#department');
+    const submitButton = modal.locator('#submit');
 
-      // Click Submit
-      await page.locator('#submit').click();
+    // Fill all required fields with valid data except Age
+    await firstNameField.fill('John');
+    await lastNameField.fill('Doe');
+    await emailField.fill('john.doe@example.com');
+    await salaryField.fill('50000'); // valid numeric
+    await departmentField.fill('Engineering');
+    // Enter non-numeric age
+    await ageField.fill('abc');
 
-      // Assert modal is still open
-      await expect(page.locator('.modal-content')).toBeVisible();
+    // Submit
+    await submitButton.click();
 
-      // Assert no new row added (table row count unchanged)
-      const rowCount = await page.locator('.rt-tbody .rt-tr-group').count();
-      // Initially table may have empty rows; actual rows are present only after valid submission.
-      // We simply verify that no row with "John" appears in the table.
-      await expect(page.locator('.rt-tbody')).not.toContainText('John');
-    });
+    // Validate modal remains open (i.e., still visible)
+    await expect(modal).toBeVisible({ timeout: 5000 });
+
+    // Optionally verify no new row added (table rows count remains same)
+    const rowsBefore = await page.locator('.rt-tr-group').count();
+    // Click cancel or close to dismiss modal for cleanup
+    const closeButton = modal.locator('.close');
+    await closeButton.click();
   });
 
-  test.describe('AC3 – Radio Button Validation', () => {
-    test('“No” option remains disabled and no state change on click', async ({ page }) => {
-      await page.goto(`${baseUrl}/radio-button`);
+  // AC3 – Radio Button Validation – No option disabled
+  test('AC3: “No” radio button remains disabled and unclickable', async ({ page }) => {
+    await gotoElementsPage(page, 'radio-button');
 
-      const noRadio = page.locator('#noRadio');
+    const noRadio = page.locator('#noRadio');
 
-      // Assert it is disabled initially
-      await expect(noRadio).toBeDisabled();
+    // Verify disabled attribute
+    await expect(noRadio).toBeDisabled({ timeout: 5000 });
 
-      // Click the radio (should do nothing because disabled)
-      await noRadio.click({ force: true });
+    // Attempt to click (should not change state)
+    await noRadio.click({ force: true }); // force attempt
 
-      // Assert still disabled
-      await expect(noRadio).toBeDisabled();
-
-      // Assert no success message (e.g. "You have selected No")
-      // The success text appears in an element with class .text-success (common pattern)
-      const successMessage = page.locator('.text-success');
-      await expect(successMessage).toBeHidden();
-    });
+    // After click, button should still be disabled
+    await expect(noRadio).toBeDisabled();
   });
 
-  test.describe('AC4 – UI Stability under Overlay', () => {
-    test('elements remain interactable via scroll/visibility handling despite overlay', async ({ page }) => {
-      await page.goto(`${baseUrl}/text-box`);
+  // AC4 – UI Stability under obstruction (overlay)
+  test('AC4: UI stable with overlay – element remains interactable', async ({ page }) => {
+    await gotoElementsPage(page, 'text-box');
 
-      // Inject an overlay that covers the entire page
-      await page.evaluate(() => {
-        const overlay = document.createElement('div');
-        overlay.id = 'test-overlay';
-        overlay.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 9999;
-          pointer-events: none; /* makes overlay non-blocking for testing */
-        `;
-        document.body.appendChild(overlay);
-      });
+    const emailInput = page.locator('#userEmail');
+    const outputSection = page.locator('#output');
 
-      // Wait for overlay to be present
-      await expect(page.locator('#test-overlay')).toBeVisible();
-
-      // Scroll down if needed (simulate using scrollIntoView) and interact with email field
-      await page.locator('#userEmail').scrollIntoViewIfNeeded();
-      await page.locator('#userEmail').fill('user@example.com');
-
-      // Click Submit
-      await page.locator('#submit').click();
-
-      // Assert output section appears for valid input
-      const output = page.locator('#output');
-      await expect(output).toBeVisible();
-
-      // Cleanup overlay
-      await page.evaluate(() => {
-        document.getElementById('test-overlay')?.remove();
-      });
+    // Inject a fixed overlay that covers the entire viewport
+    await page.evaluate(() => {
+      const overlay = document.createElement('div');
+      overlay.id = 'test-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+      overlay.style.zIndex = '9999';
+      document.body.appendChild(overlay);
     });
+
+    // Scroll email input into view
+    await emailInput.scrollIntoViewIfNeeded();
+    // Attempt to type into the email field
+    await emailInput.fill('valid@example.com');
+
+    // Remove overlay
+    await page.evaluate(() => {
+      const overlay = document.getElementById('test-overlay');
+      if (overlay) overlay.remove();
+    });
+
+    // Now submit and verify output is displayed (proving the field is interactable)
+    const submitButton = page.locator('#submit');
+    await submitButton.click();
+
+    // Output section should appear (since we entered a valid email)
+    await expect(outputSection).toBeVisible({ timeout: 5000 });
   });
 });

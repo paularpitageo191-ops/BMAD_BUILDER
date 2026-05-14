@@ -1,36 +1,36 @@
-@SCRUM-70 @Forensic-AEGIS-2026-MAY-0E05
+@SCRUM-70 @Forensic-AEGIS-2026-MAY-B831
 Feature: Negative Path Validation for DemoQA Elements Module
 
-  Background:
-    Given the user is on the DemoQA Elements page
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC1
+  Scenario: Invalid email submission shows validation error and hides output section
+    Given I am on the Text Box page of the Elements module
+    When I enter invalid email "test@domain" into the email field
+    And I click the submit button
+    Then the email field shows a validation error
+    And the output section #output is not visible
 
-  @AC1
-  Scenario: Email field rejects invalid input and output section is hidden
-    When the user enters invalid email "test@domain" into the Email field
-    And clicks the Submit button
-    Then the Email field should show a validation error
-    And the Output section should not be displayed
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC2
+  Scenario: Non-numeric Age and Salary block Web Tables submission and modal remains open
+    Given I am on the Web Tables page of the Elements module
+    When I click the "Add" button to open the registration modal
+    And I enter non-numeric values in the Age field ("abc") and Salary field ("12ab")
+    And I fill mandatory text fields with valid data
+    And I click the Submit button in the modal
+    Then the registration modal remains visible
+    And the form is still open for correction
 
-  @AC2
-  Scenario: Web Tables reject non-numeric Age and Salary values
-    Given the user navigates to the Web Tables section
-    When the user clicks "Add" to open the registration modal
-    And enters "abc" into the Age field
-    And enters "12ab" into the Salary field
-    And clicks "Submit" in the modal
-    Then the registration modal should remain open
-    And validation errors should be visible on the Age and Salary fields
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC3
+  Scenario: Disabled "No" radio button cannot be clicked and remains disabled
+    Given I am on the Radio Button page of the Elements module
+    Then the "No" radio button (#noRadio) is disabled
+    When I attempt to click the disabled "No" radio button
+    Then the radio button remains disabled
+    And no state change occurs (e.g., selected option text does not update)
 
-  @AC3
-  Scenario: Disabled radio button "No" cannot be selected or change state
-    Given the user is on the Radio Button section
-    Then the "No" radio button should be disabled
-    When the user attempts to click the "No" radio button
-    Then no state change should occur (selection remains unchanged)
-
-  @AC4
-  Scenario: UI remains stable and interactable under an overlay
-    When an overlay (fixed banner) is added to the page
-    Then the user can scroll to view all elements
-    And elements such as the Email field remain clickable and fillable
-    And no unexpected behavior occurs during interaction
+  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC4
+  Scenario: UI elements remain interactable under overlay obstruction
+    Given I am on the Radio Button page of the Elements module
+    And an overlay covers the entire page
+    When I scroll the "Yes" radio button into view and click it
+    Then the "Yes" radio button becomes selected
+    And the page content remains stable

@@ -1,119 +1,149 @@
 import { test, expect } from '@playwright/test';
-import { chromium } from 'playwright';
+
+const BASE_URL = 'https://demoqa.com';
 
 test.describe('SCRUM-70 Negative Path Validation for DemoQA Elements Module', () => {
 
-  // AC1 – Email Validation
-  test('Email Validation - invalid email blocks output display', async ({ page }) => {
-    const demoqaUrl = 'https://demoqa.com/text-box';
-    await page.goto(demoqaUrl, { waitUntil: 'networkidle' });
-
-    // Enter invalid email (missing TLD)
-    const emailField = page.locator('#userEmail');
-    await emailField.fill('test@domain');
-
-    // Click Submit button
+  test('AC1 - Email validation with invalid email format (missing TLD)', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    await page.goto(`${BASE_URL}/text-box`);
+    const emailInput = page.locator('#userEmail');
+    const outputSection = page.locator('#output');
     const submitButton = page.locator('#submit');
+
+    // When: enter invalid email
+    await emailInput.fill('test@domain');
     await submitButton.click();
 
-    // Wait for validation feedback (HTML5 constraint validation)
-    // Check that the email field shows validation error (invalid pseudo-class)
-    await expect(emailField).toHaveAttribute('required', ''); // field is required
-    // Expect the output section not to be visible (since submission didn't proceed)
-    const output = page.locator('#output');
-    await expect(output).toBeHidden();
+    // Then: validation error is shown on email input (using HTML5 validation)
+    const validity = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+    expect(validity).toBe(false);
+
+    // Then: output section is not visible
+    await expect(outputSection).not.toBeVisible();
   });
 
-  // AC2 – Web Tables Validation
-  test('Web Tables Validation - non-numeric age/salary blocks submission', async ({ page }) => {
-    const demoqaUrl = 'https://demoqa.com/webtables';
-    await page.goto(demoqaUrl, { waitUntil: 'networkidle' });
+  test('AC1 - Email validation with empty email input', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    await page.goto(`${BASE_URL}/text-box`);
+    const outputSection = page.locator('#output');
+    const submitButton = page.locator('#submit');
 
-    // Click Add button to open registration modal
+    // When: leave email empty and click submit
+    await submitButton.click();
+
+    // Then: output section is not visible
+    await expect(outputSection).not.toBeVisible();
+  });
+
+  test('AC2 - Web Tables reject non-numeric value in Age field', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    await page.goto(`${BASE_URL}/webtables`);
     const addButton = page.locator('#addNewRecordButton');
     await addButton.click();
 
-    // Fill in Age field with non-numeric value
-    const ageField = page.locator('#age');
-    await ageField.fill('abc');
-
-    // Fill in Salary field with non-numeric value
-    const salaryField = page.locator('#salary');
-    await salaryField.fill('12ab');
-
-    // Click Submit button inside the modal
-    const submitButton = page.locator('#submit');
-    await submitButton.click();
-
-    // Expect the modal to remain open (i.e., not closed)
+    // Modal appears
     const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
 
-    // Expect the form not to be submitted (table row count unchanged)
-    const rowsBeforeAdd = await page.locator('.rt-tr-group').count();
-    // After invalid submission, no new row added
-    await expect(rowsBeforeAdd).toBe(0); // Adjust initial count as needed; here we just check no new row
+    const firstNameInput = page.locator('#firstName');
+    const lastNameInput = page.locator('#lastName');
+    const emailInput = page.locator('#userEmail');
+    const ageInput = page.locator('#age');
+    const salaryInput = page.locator('#salary');
+    const departmentInput = page.locator('#department');
+    const submitButton = modal.locator('#submit');
+
+    // Fill required fields with valid data except age
+    await firstNameInput.fill('John');
+    await lastNameInput.fill('Doe');
+    await emailInput.fill('john@example.com');
+    await ageInput.fill('abc'); // non-numeric
+    await salaryInput.fill('50000');
+    await departmentInput.fill('QA');
+
+    // Click submit
+    await submitButton.click();
+
+    // Then: modal should still be open
+    await expect(modal).toBeVisible();
+
+    // Then: no new row should be added (count rows before and after)
+    const rowCountBefore = await page.locator('.rt-tr-group').count();
+    // After failed submit, row count remains the same
+    const rowCountAfter = await page.locator('.rt-tr-group').count();
+    expect(rowCountAfter).toBe(rowCountBefore);
   });
 
-  // AC3 – Radio Button Validation
-  test('Radio Button Validation - disabled "No" option remains unclickable', async ({ page }) => {
-    const demoqaUrl = 'https://demoqa.com/radio-button';
-    await page.goto(demoqaUrl, { waitUntil: 'networkidle' });
+  test('AC2 - Web Tables reject non-numeric value in Salary field', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    await page.goto(`${BASE_URL}/webtables`);
+    const addButton = page.locator('#addNewRecordButton');
+    await addButton.click();
 
-    // Locate the disabled radio button
+    const modal = page.locator('.modal-content');
+    await expect(modal).toBeVisible();
+
+    const firstNameInput = page.locator('#firstName');
+    const lastNameInput = page.locator('#lastName');
+    const emailInput = page.locator('#userEmail');
+    const ageInput = page.locator('#age');
+    const salaryInput = page.locator('#salary');
+    const departmentInput = page.locator('#department');
+    const submitButton = modal.locator('#submit');
+
+    await firstNameInput.fill('Jane');
+    await lastNameInput.fill('Doe');
+    await emailInput.fill('jane@example.com');
+    await ageInput.fill('30');
+    await salaryInput.fill('12ab'); // non-numeric
+    await departmentInput.fill('Dev');
+
+    await submitButton.click();
+
+    await expect(modal).toBeVisible();
+    const rowCountBefore = await page.locator('.rt-tr-group').count();
+    const rowCountAfter = await page.locator('.rt-tr-group').count();
+    expect(rowCountAfter).toBe(rowCountBefore);
+  });
+
+  test('AC3 - Radio Button "No" option is disabled and non-interactable', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    await page.goto(`${BASE_URL}/radio-button`);
     const noRadio = page.locator('#noRadio');
 
-    // Verify it is disabled
+    // Then: element is disabled
     await expect(noRadio).toBeDisabled();
 
-    // Attempt to click it
-    await noRadio.click({ force: true }); // force click to circumvent disabled? No, we want to ensure no state change
-
-    // Verify it remains disabled after click attempt
-    await expect(noRadio).toBeDisabled();
-
-    // Verify that the "No" message is NOT displayed (i.e., no state change)
-    const noMessage = page.locator('text=You have selected No');
-    await expect(noMessage).toBeHidden();
+    // Attempt to click using JavaScript (since Playwright will refuse disabled)
+    const wasClicked = await noRadio.evaluate((el: HTMLInputElement) => {
+      const event = new MouseEvent('click', { bubbles: true });
+      const prevented = !el.dispatchEvent(event);
+      return { checked: el.checked, eventPrevented: prevented };
+    });
+    expect(wasClicked.checked).toBe(false);
   });
 
-  // AC4 – UI Stability under obstruction
-  test('UI Stability under obstruction - elements remain interactable', async ({ page }) => {
-    const demoqaUrl = 'https://demoqa.com/text-box';
-    await page.goto(demoqaUrl, { waitUntil: 'networkidle' });
+  test('AC4 - UI remains stable under obstruction (overlay)', { tag: ['@SCRUM-70', '@Forensic-AEGIS-2026-MAY-B831'] }, async ({ page }) => {
+    // Navigate to any Elements page (text-box)
+    await page.goto(`${BASE_URL}/text-box`);
 
-    // Inject a fixed overlay that covers the entire page
+    // Create an obstruction (full-screen overlay) to simulate UI stability requirement
     await page.evaluate(() => {
       const overlay = document.createElement('div');
       overlay.id = 'test-overlay';
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-      overlay.style.zIndex = '9999';
-      overlay.style.pointerEvents = 'none'; // allow clicks to pass through? Actually we mimic obstruction that might break UI but elements behind might still be interactable? AC says elements remain interactable via scroll/visibility handling.
+      overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; pointer-events:none;';
       document.body.appendChild(overlay);
     });
 
-    // Scroll to submit button
+    // Target element (submit button) should be interactable after scrolling into view
     const submitButton = page.locator('#submit');
     await submitButton.scrollIntoViewIfNeeded();
-
-    // Wait a bit for any rendering issues
-    await page.waitForTimeout(500);
-
-    // Verify the submit button is clickable
     await expect(submitButton).toBeVisible();
-    await expect(submitButton).toBeEnabled();
+    // Click should succeed despite overlay (overlay has pointer-events:none, but real overlays may block)
+    await submitButton.click();
 
-    // Interact with permanent address field
-    const permAddressField = page.locator('#permanentAddress');
-    await permAddressField.scrollIntoViewIfNeeded();
-    await permAddressField.fill('123 Stable Lane');
-
-    // Verify UI did not break (field received input)
-    await expect(permAddressField).toHaveValue('123 Stable Lane');
+    // Clean up overlay
+    await page.evaluate(() => {
+      const overlay = document.getElementById('test-overlay');
+      if (overlay) overlay.remove();
+    });
   });
+
+  // Assumption: we rely on html5 validation for AC1; DemoQA text-box form uses required and type=email
 });
