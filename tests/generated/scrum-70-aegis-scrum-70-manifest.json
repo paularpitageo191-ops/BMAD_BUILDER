@@ -1,0 +1,47 @@
+{
+  "forensic_id": "AEGIS-SCRUM-70",
+  "ticket_key": "SCRUM-70",
+  "ticket_summary": "Negative path validation for DemoQA Elements",
+  "exported_at": "2026-05-14T22:15:13.887681",
+  "framework": "playwright",
+  "language": "typescript",
+  "scenario_format": "gherkin",
+  "files": [
+    {
+      "agent": "API",
+      "feature": "tests/gherkin/scrum-70-api.feature",
+      "code": "tests/generated/scrum-70-api.spec.ts",
+      "provider": "deepseek",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "FUNCTIONAL",
+      "feature": "tests/gherkin/scrum-70-functional.feature",
+      "code": "tests/generated/scrum-70-functional.spec.ts",
+      "provider": "deepseek",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "UI",
+      "feature": "tests/gherkin/scrum-70-ui.feature",
+      "code": "tests/generated/scrum-70-ui.spec.ts",
+      "provider": "deepseek",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    },
+    {
+      "agent": "REGRESSION",
+      "feature": "tests/gherkin/scrum-70-regression.feature",
+      "code": "tests/generated/scrum-70-regression.spec.ts",
+      "provider": "deepseek",
+      "framework": "playwright",
+      "language": "typescript",
+      "scenario_format": "gherkin"
+    }
+  ]
+}

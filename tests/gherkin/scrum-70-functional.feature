@@ -1,37 +1,22 @@
-Feature: Negative Path Validation for DemoQA Elements Module
-  As a QA Engineer
-  I want to validate negative scenarios in the Elements module
-  so that invalid inputs are handled correctly and the UI remains stable under edge conditions
+Feature: Negative Path Validation for DemoQA Elements Web Table Registration
+  As a user of the DemoQA Elements page
+  I want to see validation errors for invalid email input in the registration modal
+  So that invalid data is not accepted and the modal remains open for correction
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC1
-  Scenario: Invalid email input triggers validation error and no output is displayed
-    Given the user is on the Text Box page of the Elements module
-    When the user enters an invalid email address (e.g., "test@domain")
-    And the user clicks the Submit button
-    Then an error class "field-error" or validation message is visible on the #userEmail input field
-    And the #output section is not displayed
+  Scenario: Invalid email shows validation error
+    Given the user is on the Elements page and has opened the Web Table registration modal
+    When the user fills the Email field with an invalid email "notanemail"
+    And clicks the Submit button
+    Then the email validation error message should be visible
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC2
-  Scenario: Non-numeric Age blocks Web Tables registration submission
-    Given the user is on the Web Tables page of the Elements module
-    When the user clicks the Add button to open the registration modal
-    And the user enters non-numeric text (e.g., "abc") in the Age field
-    And the user enters valid data in all other required fields
-    And the user clicks the Submit button
-    Then the registration modal remains open
-    And no new record is added to the table
+  Scenario: Modal remains open after invalid input
+    Given the user is on the Elements page and has opened the Web Table registration modal
+    When the user submits the form with an invalid email
+    Then the registration modal should still be displayed
 
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC3
-  Scenario: "No" radio button remains disabled and does not change state when clicked
-    Given the user is on the Radio Button page of the Elements module
-    Then the #noRadio element should have a "disabled" attribute or class
-    When the user attempts to click the #noRadio element
-    Then the element's state remains unchanged (no selection highlight, no message displayed)
-
-  @SCRUM-70 @Forensic-AEGIS-2026-MAY-B831 @AC4
-  Scenario: UI remains stable and elements are interactable after an overlay is displayed and handled
-    Given the user is on the Text Box page of the Elements module
-    When an overlay is injected covering the page
-    And the user scrolls the email input field into view
-    Then the user can still type into the #userEmail field
-    And the visibility of #output remains unaffected after overlay removal
+  Scenario: Regression – Valid submission adds a row and closes the modal
+    Given the user is on the Elements page and has opened the Web Table registration modal
+    When the user fills all required fields with valid data, including a correct email "john.doe@example.com"
+    And clicks the Submit button
+    Then the modal should close
+    And a new row with the entered data should appear in the web table

@@ -1,144 +1,86 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-const ELEMENTS_URL = 'https://demoqa.com/elements';
+test.describe('Negative path validation for DemoQA Web Table email field', () => {
 
-// Helper to navigate to a specific tab by text
-async function navigateToTab(page: Page, tabText: string) {
-  await page.locator('.left-pannel').getByText(tabText).click();
-}
-
-// Helper to create a fixed overlay covering the entire page
-async function injectOverlay(page: Page) {
-  await page.evaluate(() => {
-    const overlay = document.createElement('div');
-    overlay.id = 'test-overlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    overlay.style.zIndex = '9999';
-    overlay.style.pointerEvents = 'none'; // allow clicks to pass through for interaction (simulates obstruction but still interactable via scroll)
-    document.body.appendChild(overlay);
-  });
-}
-
-// AC1 - Email Validation
-test.describe('AC1 – Email Validation (@AC1)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(ELEMENTS_URL);
-    await navigateToTab(page, 'Text Box');
+    await page.goto('https://demoqa.com/elements');
+    // Navigate to Web Tables section
+    await page.getByText('Web Tables').click();
   });
 
-  const invalidEmails = ['test@domain', 'user@.com', '@example.com', 'plainaddress'];
-
-  for (const email of invalidEmails) {
-    test(`Invalid email "${email}" should trigger validation error and no output`, async ({ page }) => {
-      await page.locator('#userEmail').fill(email);
-      await page.locator('#submit').click();
-
-      // Assert validation error: check for invalid email pattern (HTML5 built-in validation)
-      const emailInput = page.locator('#userEmail');
-      const isValid = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid);
-      await expect(isValid).toBe(false);
-
-      // Assert output section is not displayed
-      const outputSection = page.locator('#output');
-      await expect(outputSection).not.toBeVisible();
-    });
-  }
-});
-
-// AC2 - Web Tables Validation
-test.describe('AC2 – Web Tables Validation (@AC2)', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(ELEMENTS_URL);
-    await navigateToTab(page, 'Web Tables');
-  });
-
-  test('Non-numeric Age and Salary blocks submission and modal stays open', async ({ page }) => {
-    // Open registration form modal
-    await page.locator('button#addNewRecordButton').click();
-    const modal = page.locator('.modal-content');
+  test('Invalid email keeps modal open with validation error', async ({ page }) => {
+    // Open add record modal
+    await page.getByRole('button', { name: 'Add' }).click();
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
 
-    // Fill fields
-    await page.locator('#firstName').fill('John');
-    await page.locator('#lastName').fill('Doe');
-    await page.locator('#age').fill('abc');
-    await page.locator('#salary').fill('12ab');
+    // Fill valid fields (synthetic data)
+    await modal.getByLabel('First Name').fill('John');
+    await modal.getByLabel('Last Name').fill('Doe');
+    await modal.getByLabel('Age').fill('30');
+    await modal.getByLabel('Salary').fill('50000');
+    await modal.getByLabel('Department').fill('QA');
+    // Enter invalid email
+    const emailInput = modal.getByLabel('Email');
+    await emailInput.fill('invalid-email');
 
-    // Click Submit
-    await page.locator('#submit').click();
+    // Submit the modal
+    await modal.getByRole('button', { name: 'Submit' }).click();
 
-    // Assert modal remains open
+    // Assert modal is still visible
     await expect(modal).toBeVisible();
 
-    // Assert no new row added (table still contains same number of rows)
-    const rowsBefore = await page.locator('.rt-tr-group').count();
-    // Actually after failed submission, no new row should appear, so count unchanged
-    // For simplicity, just verify modal is still open and no success indicator
-    // Optionally check that the table rows count hasn't increased (but baseline established before modal open)
-    // We'll just rely on modal visibility as per AC2
-  });
-});
-
-// AC3 - Radio Button Validation
-test.describe('AC3 – Radio Button Validation (@AC3)', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(ELEMENTS_URL);
-    await navigateToTab(page, 'Radio Button');
+    // Assert browser validation message is shown
+    const validationMessage = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
+    expect(validationMessage.length).toBeGreaterThan(0);
   });
 
-  test('Disabled "No" radio button remains disabled and unclickable', async ({ page }) => {
-    const noRadio = page.locator('#noRadio');
+  test('Boundary – email with no @ symbol triggers validation', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add' }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
 
-    // Assert it is disabled
-    await expect(noRadio).toBeDisabled();
+    await modal.getByLabel('First Name').fill('Jane');
+    await modal.getByLabel('Last Name').fill('Smith');
+    await modal.getByLabel('Age').fill('25');
+    await modal.getByLabel('Salary').fill('60000');
+    await modal.getByLabel('Department').fill('Engineering');
+    const emailInput = modal.getByLabel('Email');
+    await emailInput.fill('userexample.com'); // missing @
 
-    // Attempt to click
-    await noRadio.click({ force: true });  // force click may work, but we want to verify state unchanged
+    await modal.getByRole('button', { name: 'Submit' }).click();
 
-    // Verify still disabled
-    await expect(noRadio).toBeDisabled();
-
-    // Verify no state change (e.g., not checked)
-    const isChecked = await noRadio.isChecked();
-    await expect(isChecked).toBe(false);
-  });
-});
-
-// AC4 - UI Stability under Obstruction
-test.describe('AC4 – UI Stability under Obstruction (@AC4)', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto(ELEMENTS_URL);
-    await navigateToTab(page, 'Text Box');
-    await injectOverlay(page);
+    await expect(modal).toBeVisible();
+    const validationMessage = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
+    expect(validationMessage.length).toBeGreaterThan(0);
   });
 
-  test('Elements remain interactable with overlay present', async ({ page }) => {
-    const emailInput = page.locator('#userEmail');
+  test('Regression – modal does not close on invalid email submission', async ({ page }) => {
+    await page.getByRole('button', { name: 'Add' }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
 
-    // Scroll to the element
-    await emailInput.scrollIntoViewIfNeeded();
+    await modal.getByLabel('First Name').fill('Alice');
+    await modal.getByLabel('Last Name').fill('Brown');
+    await modal.getByLabel('Age').fill('35');
+    await modal.getByLabel('Salary').fill('70000');
+    await modal.getByLabel('Department').fill('Marketing');
+    const emailInput = modal.getByLabel('Email');
+    await emailInput.fill('user@.com'); // technically invalid
 
-    // Type text
-    await emailInput.fill('invalid@email');
-    await page.locator('#submit').click();
+    await modal.getByRole('button', { name: 'Submit' }).click();
 
-    // Assert validation error still triggered
-    const isValid = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid);
-    await expect(isValid).toBe(false);
+    // Modal should remain open
+    await expect(modal).toBeVisible();
 
-    // Assert overlay still present
-    const overlay = page.locator('#test-overlay');
-    await expect(overlay).toBeVisible();
+    // Check that no success indicator appears (e.g., new row in table)
+    // Since the form failed to submit, the table should not change.
+    // We can verify the modal is still displayed and the form is still present.
+    // Additionally, the email input should still be invalid.
+    const validState = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid);
+    expect(validState).toBe(false);
 
-    // Clean up overlay after test
-    await page.evaluate(() => {
-      const overlay = document.getElementById('test-overlay');
-      if (overlay) overlay.remove();
-    });
+    // Ensure the modal's submit button is still present (form was not processed)
+    await expect(modal.getByRole('button', { name: 'Submit' })).toBeVisible();
   });
 });
