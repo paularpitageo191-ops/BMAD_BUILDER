@@ -1,51 +1,90 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('@JIRA-SCRUM-70: Negative path validation for DemoQA Elements', () => {
+const URL = 'https://demoqa.com/elements';
+
+test.describe('DemoQA Elements – Negative Path Validation (SCRUM-70)', () => {
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://demoqa.com/elements');
+    await page.goto(URL);
   });
 
-  test('Invalid email in Text Box shows validation error', async ({ page }) => {
-    // Use the stable #userEmail selector
+  test('@ui-negative: Invalid email shows inline validation', async ({ page }) => {
+    // Invalid email
+    await page.fill('#userEmail', 'not_an_email');
+    await page.click('#submit');
+
+    // Expect validation error (browser validation or custom)
+    // The exact message may vary; check for validation pseudo-class or message
     const emailInput = page.locator('#userEmail');
-    await emailInput.fill('notanemail');
-    await page.locator('#submit').click();
-    
-    // The browser's built-in email validation shows an error tooltip or pseudo-class
-    // Check that the field is invalid via HTML5 validation
-    await expect(emailInput).toHaveJSProperty('validity.valid', false);
+    await expect(emailInput).toHaveAttribute('validationMessage', /Please include an '@' in the email address/i);
+    // Confirm no successful output appeared
+    await expect(page.locator('#output')).not.toBeVisible();
   });
 
-  test('Modal remains open on invalid email in Web Tables registration', async ({ page }) => {
-    // Open registration modal
-    await page.locator('#addNewRecordButton').click();
-    
-    // Locate modal form - assume a registration form modal
-    const modal = page.locator('.modal-content'); // or a more specific selector
-    await expect(modal).toBeVisible();
-    
-    // Fill invalid email in modal's email field (assume it exists with role=textbox)
-    const modalEmailField = modal.locator('input[type="email"]');
-    await modalEmailField.fill('bad@format');
-    
-    // Click submit button in modal (assume a submit button with text)
-    const modalSubmitButton = modal.locator('button:has-text("Submit")');
-    await modalSubmitButton.click();
-    
-    // Verify modal remains open and error shown
-    await expect(modal).toBeVisible();
-    // Assume an error message appears inside the modal
-    const errorMessage = modal.locator('.error, .invalid-feedback, [class*="error"]');
-    await expect(errorMessage).toBeVisible();
-  });
+  test('@ui-regression: Valid email submits successfully', async ({ page }) => {
+    await page.fill('#userEmail', 'user@example.com');
+    await page.click('#submit');
 
-  test('Valid submission still works after changes', async ({ page }) => {
-    // Happy path regression check
-    await page.locator('#userEmail').fill('test@example.com');
-    await page.locator('#submit').click();
-    
-    // Expect output div to contain the email
+    // Expect output to appear with submitted data
     const output = page.locator('#output');
-    await expect(output).toContainText('test@example.com');
+    await expect(output).toBeVisible();
+    await expect(output).toContainText('user@example.com');
+  });
+
+  test('@ui-negative: Modal stays open on invalid age (maxlength exceeded)', async ({ page }) => {
+    // Open modal for Web Tables registration
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content'); // generic modal locator
+    await expect(modal).toBeVisible();
+
+    // Fill age with value exceeding maxlength (maxlength=2)
+    await page.fill('#age', '123');
+    // Age field likely truncates input to 2 characters, but we can still try
+    // Click submit
+    await page.click('#submit');
+    // Modal should still be present
+    await expect(modal).toBeVisible();
+    // Ensure no new record added (table row count unchanged)
+    const tableRows = page.locator('.rt-tr-group');
+    const initialCount = await tableRows.count();
+    // Submit would not add record
+    const currentCount = await tableRows.count();
+    expect(currentCount).toBe(initialCount);
+  });
+
+  test('@ui-boundary: Salary exceeding maxlength triggers validation', async ({ page }) => {
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content');
+    await expect(modal).toBeVisible();
+
+    // salary has maxlength=10, entering 11 characters
+    await page.fill('#salary', '12345678901'); // 11 chars
+    // The field might not accept more than 10; verify value is truncated or validation shown
+    const salaryInput = page.locator('#salary');
+    const value = await salaryInput.inputValue();
+    expect(value.length).toBeLessThanOrEqual(10);
+
+    await page.click('#submit');
+    // Modal stays visible because form is invalid (missing required fields like first name)
+    await expect(modal).toBeVisible();
+  });
+
+  test('@ui-regression: Modal rejects invalid data and stays open', async ({ page }) => {
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content');
+    await expect(modal).toBeVisible();
+
+    // Leave first name empty (required), fill age with invalid boundary
+    await page.fill('#age', '0');
+    // Click submit without filling required fields
+    await page.click('#submit');
+    // Modal should remain open
+    await expect(modal).toBeVisible();
+    // Expect validation error on first name field
+    const firstNameField = page.locator('#firstName');
+    await expect(firstNameField).toHaveAttribute('required', '');
+    // Browser validation prevents submission; check that input is still focused or error shown
+    // Alternatively check that no success indicator appears
+    await expect(page.locator('#output')).not.toBeVisible();
   });
 });

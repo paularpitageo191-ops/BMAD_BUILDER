@@ -1,55 +1,78 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test.describe('Negative Path Validation – DemoQA Elements (SCRUM-70)', () => {
-  test('Invalid email shows validation on Text Box', async ({ page }) => {
+test.describe('Negative path validation for DemoQA Elements', () => {
+  test('Invalid email shows validation error on Text Box', async ({ page }: { page: Page }) => {
     await page.goto('https://demoqa.com/elements');
+    // Navigate to Text Box (assumed default view, or click Text Box tab)
+    // For stability, ensure Text Box section is visible
+    await page.locator('#userEmail').scrollIntoViewIfNeeded();
 
-    // Enter invalid email into the email field (using stable selector)
-    await page.fill('#userEmail', 'not-an-email');
+    await page.locator('#userEmail').fill('invalid');
+    await page.locator('#submit').click();
 
-    // Click submit button
-    await page.click('#submit');
-
-    // Expect validation error – email input should be invalid
+    // Validate native browser validation message
     const emailInput = page.locator('#userEmail');
-    await expect(emailInput).toHaveAttribute('class', /is-invalid/); // adjust based on actual validation class
-    // Alternative: check browser validation message
-    // await expect(page.locator('#userEmail:invalid')).toBeVisible();
+    const validationMessage = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
+    expect(validationMessage).toBeTruthy();
+    expect(validationMessage).not.toBe('');
+
+    // Output area should not display submitted data
+    await expect(page.locator('#output')).toBeEmpty();
   });
 
-  test('Modal remains open on invalid input in Web Tables registration', async ({ page }) => {
+  test('Registration modal stays open after invalid non-numeric age', async ({ page }: { page: Page }) => {
     await page.goto('https://demoqa.com/elements');
+    // Open the Web Tables section (navigate to specific tab if needed; assume it's accessible)
+    await page.locator('#addNewRecordButton').click();
 
-    // Click "Add" button to open registration modal
-    await page.click('#addNewRecordButton');
-
-    // Locate the modal
-    const modal = page.locator('.modal-content');
+    // Modal should be visible
+    const modal = page.locator('.modal-dialog'); // generic modal selector; adjust if needed
     await expect(modal).toBeVisible();
 
-    // Fill first name (valid), but leave other required fields empty or with invalid data
-    await page.fill('#firstName', 'John');
-    // Do not fill email or age – they are required and should trigger validation
+    await modal.locator('#age').fill('abc');
+    await modal.locator('button[type="submit"]').click();
 
-    // Click submit inside modal
-    await page.click('#submit');
-
-    // Modal should still be visible
+    // Modal should remain open
     await expect(modal).toBeVisible();
+
+    // Age field should show validation error
+    const ageInput = modal.locator('#age');
+    await expect(ageInput).toHaveAttribute('aria-invalid', 'true');
+    const ageValidation = await ageInput.evaluate((el: HTMLInputElement) => el.validationMessage);
+    expect(ageValidation).toBeTruthy();
   });
 
-  test('Regression – modal blocking unchanged after code changes', async ({ page }) => {
+  test('Registration modal stays open after salary exceeding maxlength', async ({ page }: { page: Page }) => {
     await page.goto('https://demoqa.com/elements');
+    await page.locator('#addNewRecordButton').click();
 
-    // Open modal
-    await page.click('#addNewRecordButton');
-    const modal = page.locator('.modal-content');
+    const modal = page.locator('.modal-dialog');
     await expect(modal).toBeVisible();
 
-    // Submit without any data
-    await page.click('#submit');
+    await modal.locator('#salary').fill('12345678901'); // more than 10 digits
+    await modal.locator('button[type="submit"]').click();
 
-    // Modal stays open
     await expect(modal).toBeVisible();
+
+    // Salary field should have maxlength enforced; the input may be truncated or show error
+    const salaryInput = modal.locator('#salary');
+    const enteredValue = await salaryInput.inputValue();
+    expect(enteredValue.length).toBeLessThanOrEqual(10); // maxlength constraint
+    // Alternatively check validation message if HTML5 pattern/type is applied
+    await expect(salaryInput).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  test('Disabled No radio button remains non-interactable', async ({ page }: { page: Page }) => {
+    await page.goto('https://demoqa.com/elements');
+    // Navigate to Radio Button section (assume tab navigation or direct URL)
+    const noRadio = page.locator('#noRadio');
+    await expect(noRadio).toBeDisabled();
+
+    // Attempt clicking with force: false (will be blocked by Playwright)
+    await noRadio.click({ force: false, trial: true }).catch(() => {});
+
+    // Confirm state unchanged
+    await expect(noRadio).toBeDisabled();
+    await expect(noRadio).not.toBeChecked();
   });
 });

@@ -1,35 +1,55 @@
-Feature: DemoQA Elements Negative Path Validation
-  As a user, I want to see proper validation when entering invalid data
-  And ensure modals remain open on invalid input
-  So that the application handles negative paths correctly
+Feature: Negative Path Validation for DemoQA Elements
 
-  Scenario: Invalid email displays validation error on Text Box
-    Given I am on the Text Box tab
-    When I enter an invalid email "invalid-email"
-    And I click the Submit button
-    Then I should see a validation error on the email field
+  Scenario: Invalid email format triggers browser validation on Text Box submit
+    Given the user is on the Text Box section of the DemoQA Elements page
+    When the user fills "#userEmail" with "invalid-email"
+    And the user clicks the "#submit" button
+    Then the browser shows a validation message on the email field
+    And no output is displayed in "#output"
 
-  Scenario: Valid email submission succeeds (Regression)
-    Given I am on the Text Box tab
-    When I enter a valid email "test@example.com"
-    And I click the Submit button
-    Then the output section should display the submitted email
+  Scenario: Empty email submission is blocked by validation
+    Given the user is on the Text Box section of the DemoQA Elements page
+    When the user clears "#userEmail"
+    And the user clicks the "#submit" button
+    Then the browser shows a validation message on the email field
+    And the "#output" element remains empty or hidden
 
-  Scenario: Modal remains open when invalid age is entered
-    Given I am on the Web Tables tab
-    When I click the "Add" button to open the registration modal
-    And I enter an invalid age "abc"
-    And I click "Submit" in the modal
-    Then the registration modal should remain open
+  Scenario: Registration modal stays open after invalid First Name submission
+    Given the user is on the Web Tables section of the DemoQA Elements page
+    And the registration modal is open
+    When the user leaves "First Name" empty
+    And the user fills "Last Name" with "Doe"
+    And the user fills "Email" with "john@example.com"
+    And the user fills "#age" with "30"
+    And the user fills "#salary" with "50000"
+    And the user clicks the Submit button in the registration modal
+    Then the registration modal remains visible
 
-  Scenario: Modal remains open when invalid salary is entered
-    Given I am on the Web Tables tab
-    When I click the "Add" button to open the registration modal
-    And I enter an invalid salary "xyz"
-    And I click "Submit" in the modal
-    Then the registration modal should remain open
+  Scenario: Registration modal stays open after non-numeric Age input
+    Given the user is on the Web Tables section of the DemoQA Elements page
+    And the registration modal is open
+    When the user fills "First Name" with "John"
+    And the user fills "Last Name" with "Doe"
+    And the user fills "Email" with "john@example.com"
+    And the user fills "#age" with "abc"
+    And the user fills "#salary" with "50000"
+    And the user clicks the Submit button in the registration modal
+    Then the registration modal remains visible
 
-  Scenario: Disabled radio button cannot be selected
-    Given I am on the Radio Button tab
-    When I click on the "No" radio button
-    Then the "No" radio button should remain unchecked
+  Scenario: Valid email submission works correctly (regression baseline)
+    Given the user is on the Text Box section of the DemoQA Elements page
+    When the user fills "#userEmail" with "valid.email@example.com"
+    And the user clicks the "#submit" button
+    Then the "#output" element contains the submitted data
+
+  Scenario: Valid registration submission closes modal (regression baseline)
+    Given the user is on the Web Tables section of the DemoQA Elements page
+    And the registration modal is open
+    When the user fills "First Name" with "Jane"
+    And the user fills "Last Name" with "Doe"
+    And the user fills "Email" with "jane@example.com"
+    And the user fills "#age" with "28"
+    And the user fills "#salary" with "60000"
+    And the user clicks the Submit button in the registration modal
+    Then the registration modal is no longer visible
+    And a new row appears in the table

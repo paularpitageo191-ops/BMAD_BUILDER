@@ -1,22 +1,30 @@
 Feature: Negative Path Validation for DemoQA Elements
-  User story SCRUM-70 enforces robust rejection of invalid inputs and modal persistence.
 
-  Scenario: Invalid email triggers client-side validation on Text Box
-    Given the user is on the DemoQA Elements page
-    When the user enters an invalid email "not-an-email" into the "Full Name" field
-    And the user clicks the "Submit" button
-    Then the "Email" input field shows a validation error message
+  Scenario: Invalid email shows validation error
+    Given the user navigates to the Text Box section on DemoQA Elements
+    When the user enters "invalid" in the #userEmail field
+    And the user clicks the #submit button
+    Then the #userEmail field displays a validation error
+    And the #output element is not populated
 
-  Scenario: Registration modal remains open after submitting invalid data
-    Given the user is on the DemoQA Elements page
-    When the user clicks the "Add" button to open the registration modal
-    And the user enters invalid data (e.g., non-numeric age "abc", missing salary)
-    And the user clicks the "Submit" button inside the modal
-    Then the modal remains visible and does not close
-    And the invalid fields show validation errors
+  Scenario: Registration modal stays open after invalid age input (non-numeric)
+    Given the user navigates to the Web Tables section on DemoQA Elements
+    And the user opens the Add Record modal by clicking #addNewRecordButton
+    When the user enters "abc" in the #age field
+    And the user clicks the modal's submit button
+    Then the modal dialog remains visible
+    And the #age field shows a validation error
 
-  Scenario: Regression – modal blocking still works after code changes
-    Given the user is on the DemoQA Elements page
-    When the user opens the registration modal
-    And the user submits an empty form
-    Then the modal stays open with validation prompts on required fields
+  Scenario: Registration modal stays open after salary exceeding maxlength
+    Given the user navigates to the Web Tables section on DemoQA Elements
+    And the user opens the Add Record modal by clicking #addNewRecordButton
+    When the user enters "12345678901" in the #salary field
+    And the user clicks the modal's submit button
+    Then the modal dialog remains visible
+    And the #salary field shows a validation error
+
+  Scenario: Disabled No radio button remains non-interactable
+    Given the user navigates to the Radio Button section on DemoQA Elements
+    When the user attempts to click the #noRadio element
+    Then the #noRadio element remains unselected
+    And no state change occurs

@@ -1,40 +1,26 @@
-Feature: Negative Path Validation for DemoQA Elements – Practice Form
+Feature: Negative Path Validation for DemoQA Elements – Web Tables Add Modal
+  As a user interacting with the Add record modal on the Web Tables page
+  I want clear validation feedback for invalid email input
+  So that I can correct errors before submission and the modal remains open until a valid record is submitted
 
-  Background: The user is on the Practice Form page
+  Scenario: Invalid email prevents submission and shows validation error
+    Given the user is on the "Web Tables" page
+    And the "Add" modal is open
+    When the user enters an invalid email address "invalid-email" in the Email field
+    And the user clicks the Submit button in the modal
+    Then a validation error message "Invalid email" should be displayed near the Email field
+    And the modal should remain open
 
-  Scenario: Invalid email format triggers inline validation and blocks form submission
-    Given the user is on the Practice Form
-    And the user fills in "First Name" with "Test"
-    And the user fills in "Last Name" with "User"
-    And the user fills in "Email" with "invalid-email"
-    When the user clicks the "Submit" button
-    Then the email field shows a validation error indicating an invalid email format
-    And the submission modal does not appear
-    And the form remains visible
+  Scenario: Modal stays open on invalid input
+    Given the "Add" modal is open
+    When the user submits the form with an invalid email address
+    Then the modal should not close
+    And the validation error should still be visible
 
-  Scenario: Valid email enables successful submission (regression guard)
-    Given the user is on the Practice Form
-    And the user fills in "First Name" with "Test"
-    And the user fills in "Last Name" with "User"
-    And the user fills in "Email" with "valid@example.com"
-    When the user clicks the "Submit" button
-    Then the submission modal appears with a success message
-    And the modal can be dismissed
-
-  Scenario: Boundary – empty email field triggers required validation
-    Given the user is on the Practice Form
-    And the user fills in "First Name" with "Test"
-    And the user fills in "Last Name" with "User"
-    And the email field is left empty
-    When the user clicks the "Submit" button
-    Then the email field shows a validation error indicating it is required
-    And the submission modal does not appear
-
-  Scenario: Boundary – email with special characters induces validation failure
-    Given the user is on the Practice Form
-    And the user fills in "First Name" with "Test"
-    And the user fills in "Last Name" with "User"
-    And the user fills in "Email" with "user@domain..com"
-    When the user clicks the "Submit" button
-    Then the email field shows a validation error indicating invalid format
-    And the submission modal does not appear
+  Scenario: Regression – valid email after invalid attempt allows successful submission
+    Given the "Add" modal is open
+    And the user has previously attempted to submit with an invalid email and seen a validation error
+    When the user corrects the Email field to a valid address "user@example.com"
+    And the user clicks the Submit button
+    Then the modal should close
+    And the new record should appear in the web table
