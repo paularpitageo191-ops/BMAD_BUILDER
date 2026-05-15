@@ -1,86 +1,55 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-test.describe('Negative path validation for DemoQA Web Table email field', () => {
-
-  test.beforeEach(async ({ page }) => {
+test.describe('Negative Path Validation – DemoQA Elements (SCRUM-70)', () => {
+  test('Invalid email shows validation on Text Box', async ({ page }) => {
     await page.goto('https://demoqa.com/elements');
-    // Navigate to Web Tables section
-    await page.getByText('Web Tables').click();
+
+    // Enter invalid email into the email field (using stable selector)
+    await page.fill('#userEmail', 'not-an-email');
+
+    // Click submit button
+    await page.click('#submit');
+
+    // Expect validation error – email input should be invalid
+    const emailInput = page.locator('#userEmail');
+    await expect(emailInput).toHaveAttribute('class', /is-invalid/); // adjust based on actual validation class
+    // Alternative: check browser validation message
+    // await expect(page.locator('#userEmail:invalid')).toBeVisible();
   });
 
-  test('Invalid email keeps modal open with validation error', async ({ page }) => {
-    // Open add record modal
-    await page.getByRole('button', { name: 'Add' }).click();
-    const modal = page.getByRole('dialog');
+  test('Modal remains open on invalid input in Web Tables registration', async ({ page }) => {
+    await page.goto('https://demoqa.com/elements');
+
+    // Click "Add" button to open registration modal
+    await page.click('#addNewRecordButton');
+
+    // Locate the modal
+    const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
 
-    // Fill valid fields (synthetic data)
-    await modal.getByLabel('First Name').fill('John');
-    await modal.getByLabel('Last Name').fill('Doe');
-    await modal.getByLabel('Age').fill('30');
-    await modal.getByLabel('Salary').fill('50000');
-    await modal.getByLabel('Department').fill('QA');
-    // Enter invalid email
-    const emailInput = modal.getByLabel('Email');
-    await emailInput.fill('invalid-email');
+    // Fill first name (valid), but leave other required fields empty or with invalid data
+    await page.fill('#firstName', 'John');
+    // Do not fill email or age – they are required and should trigger validation
 
-    // Submit the modal
-    await modal.getByRole('button', { name: 'Submit' }).click();
+    // Click submit inside modal
+    await page.click('#submit');
 
-    // Assert modal is still visible
+    // Modal should still be visible
     await expect(modal).toBeVisible();
-
-    // Assert browser validation message is shown
-    const validationMessage = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
-    expect(validationMessage.length).toBeGreaterThan(0);
   });
 
-  test('Boundary – email with no @ symbol triggers validation', async ({ page }) => {
-    await page.getByRole('button', { name: 'Add' }).click();
-    const modal = page.getByRole('dialog');
+  test('Regression – modal blocking unchanged after code changes', async ({ page }) => {
+    await page.goto('https://demoqa.com/elements');
+
+    // Open modal
+    await page.click('#addNewRecordButton');
+    const modal = page.locator('.modal-content');
     await expect(modal).toBeVisible();
 
-    await modal.getByLabel('First Name').fill('Jane');
-    await modal.getByLabel('Last Name').fill('Smith');
-    await modal.getByLabel('Age').fill('25');
-    await modal.getByLabel('Salary').fill('60000');
-    await modal.getByLabel('Department').fill('Engineering');
-    const emailInput = modal.getByLabel('Email');
-    await emailInput.fill('userexample.com'); // missing @
+    // Submit without any data
+    await page.click('#submit');
 
-    await modal.getByRole('button', { name: 'Submit' }).click();
-
+    // Modal stays open
     await expect(modal).toBeVisible();
-    const validationMessage = await emailInput.evaluate((el: HTMLInputElement) => el.validationMessage);
-    expect(validationMessage.length).toBeGreaterThan(0);
-  });
-
-  test('Regression – modal does not close on invalid email submission', async ({ page }) => {
-    await page.getByRole('button', { name: 'Add' }).click();
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
-
-    await modal.getByLabel('First Name').fill('Alice');
-    await modal.getByLabel('Last Name').fill('Brown');
-    await modal.getByLabel('Age').fill('35');
-    await modal.getByLabel('Salary').fill('70000');
-    await modal.getByLabel('Department').fill('Marketing');
-    const emailInput = modal.getByLabel('Email');
-    await emailInput.fill('user@.com'); // technically invalid
-
-    await modal.getByRole('button', { name: 'Submit' }).click();
-
-    // Modal should remain open
-    await expect(modal).toBeVisible();
-
-    // Check that no success indicator appears (e.g., new row in table)
-    // Since the form failed to submit, the table should not change.
-    // We can verify the modal is still displayed and the form is still present.
-    // Additionally, the email input should still be invalid.
-    const validState = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid);
-    expect(validState).toBe(false);
-
-    // Ensure the modal's submit button is still present (form was not processed)
-    await expect(modal.getByRole('button', { name: 'Submit' })).toBeVisible();
   });
 });

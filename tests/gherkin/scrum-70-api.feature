@@ -1,24 +1,40 @@
-Feature: Negative Path Validation for DemoQA Elements
+Feature: Negative Path Validation for DemoQA Elements – Practice Form
 
-  Scenario: Invalid email shows validation message
-    Given the user is on the "Elements" page of DemoQA
-    And the user sees a form with a email input field
-    When the user enters an invalid email address (e.g., "notanemail")
-    And the user attempts to submit the form
-    Then the form should display a validation error indicating the email is invalid
+  Background: The user is on the Practice Form page
 
-  Scenario: Modal remains open on invalid input submission
-    Given the user is on the DemoQA modal dialog
-    And the modal contains a text input field
-    When the user enters invalid data into the field
-    And the user clicks the modal's submit button
-    Then the modal should remain open
-    And the modal should display an appropriate error message
+  Scenario: Invalid email format triggers inline validation and blocks form submission
+    Given the user is on the Practice Form
+    And the user fills in "First Name" with "Test"
+    And the user fills in "Last Name" with "User"
+    And the user fills in "Email" with "invalid-email"
+    When the user clicks the "Submit" button
+    Then the email field shows a validation error indicating an invalid email format
+    And the submission modal does not appear
+    And the form remains visible
 
-  Scenario: Regression – valid email submission still works after negative changes
-    Given the user is on the "Elements" page of DemoQA
-    And the user has previously entered an invalid email that triggered validation
-    When the user corrects the email to a valid address (e.g., "user@example.com")
-    And the user submits the form
-    Then the form should close or navigate to a success state without errors
-    And no validation error message should be visible
+  Scenario: Valid email enables successful submission (regression guard)
+    Given the user is on the Practice Form
+    And the user fills in "First Name" with "Test"
+    And the user fills in "Last Name" with "User"
+    And the user fills in "Email" with "valid@example.com"
+    When the user clicks the "Submit" button
+    Then the submission modal appears with a success message
+    And the modal can be dismissed
+
+  Scenario: Boundary – empty email field triggers required validation
+    Given the user is on the Practice Form
+    And the user fills in "First Name" with "Test"
+    And the user fills in "Last Name" with "User"
+    And the email field is left empty
+    When the user clicks the "Submit" button
+    Then the email field shows a validation error indicating it is required
+    And the submission modal does not appear
+
+  Scenario: Boundary – email with special characters induces validation failure
+    Given the user is on the Practice Form
+    And the user fills in "First Name" with "Test"
+    And the user fills in "Last Name" with "User"
+    And the user fills in "Email" with "user@domain..com"
+    When the user clicks the "Submit" button
+    Then the email field shows a validation error indicating invalid format
+    And the submission modal does not appear

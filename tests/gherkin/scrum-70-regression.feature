@@ -1,29 +1,22 @@
-Feature: Negative path validation for DemoQA Elements Web Table email field
+Feature: Negative Path Validation for DemoQA Elements
+  User story SCRUM-70 enforces robust rejection of invalid inputs and modal persistence.
 
-  Scenario: Invalid email keeps modal open with validation error
-    Given the user is on the DemoQA Elements page and navigates to Web Tables
-    When the user clicks the "Add" button to open the registration modal
-    And enters valid first name, last name, age, salary, and department
-    And enters an invalid email "invalid-email"
-    And clicks the "Submit" button
-    Then the modal should remain visible
-    And the email field should show a browser validation error
+  Scenario: Invalid email triggers client-side validation on Text Box
+    Given the user is on the DemoQA Elements page
+    When the user enters an invalid email "not-an-email" into the "Full Name" field
+    And the user clicks the "Submit" button
+    Then the "Email" input field shows a validation error message
 
-  Scenario: Boundary – email with no @ symbol triggers validation
-    Given the user is on the DemoQA Elements page and navigates to Web Tables
+  Scenario: Registration modal remains open after submitting invalid data
+    Given the user is on the DemoQA Elements page
     When the user clicks the "Add" button to open the registration modal
-    And enters valid first name, last name, age, salary, and department
-    And enters email "userexample.com" (missing @)
-    And clicks the "Submit" button
-    Then the modal should remain visible
-    And the email field should display a validation message
+    And the user enters invalid data (e.g., non-numeric age "abc", missing salary)
+    And the user clicks the "Submit" button inside the modal
+    Then the modal remains visible and does not close
+    And the invalid fields show validation errors
 
-  Scenario: Regression – modal does not close on invalid email submission
-    Given the user is on the DemoQA Elements page and navigates to Web Tables
-    When the user clicks the "Add" button to open the registration modal
-    And enters valid first name, last name, age, salary, and department
-    And enters email "user@.com"
-    And clicks the "Submit" button
-    Then the modal should still be displayed
-    And the form should not be submitted (no success indicator)
-    And the email input should remain invalid
+  Scenario: Regression – modal blocking still works after code changes
+    Given the user is on the DemoQA Elements page
+    When the user opens the registration modal
+    And the user submits an empty form
+    Then the modal stays open with validation prompts on required fields

@@ -1,22 +1,35 @@
-Feature: Negative Path Validation for DemoQA Elements Web Table Registration
-  As a user of the DemoQA Elements page
-  I want to see validation errors for invalid email input in the registration modal
-  So that invalid data is not accepted and the modal remains open for correction
+Feature: DemoQA Elements Negative Path Validation
+  As a user, I want to see proper validation when entering invalid data
+  And ensure modals remain open on invalid input
+  So that the application handles negative paths correctly
 
-  Scenario: Invalid email shows validation error
-    Given the user is on the Elements page and has opened the Web Table registration modal
-    When the user fills the Email field with an invalid email "notanemail"
-    And clicks the Submit button
-    Then the email validation error message should be visible
+  Scenario: Invalid email displays validation error on Text Box
+    Given I am on the Text Box tab
+    When I enter an invalid email "invalid-email"
+    And I click the Submit button
+    Then I should see a validation error on the email field
 
-  Scenario: Modal remains open after invalid input
-    Given the user is on the Elements page and has opened the Web Table registration modal
-    When the user submits the form with an invalid email
-    Then the registration modal should still be displayed
+  Scenario: Valid email submission succeeds (Regression)
+    Given I am on the Text Box tab
+    When I enter a valid email "test@example.com"
+    And I click the Submit button
+    Then the output section should display the submitted email
 
-  Scenario: Regression – Valid submission adds a row and closes the modal
-    Given the user is on the Elements page and has opened the Web Table registration modal
-    When the user fills all required fields with valid data, including a correct email "john.doe@example.com"
-    And clicks the Submit button
-    Then the modal should close
-    And a new row with the entered data should appear in the web table
+  Scenario: Modal remains open when invalid age is entered
+    Given I am on the Web Tables tab
+    When I click the "Add" button to open the registration modal
+    And I enter an invalid age "abc"
+    And I click "Submit" in the modal
+    Then the registration modal should remain open
+
+  Scenario: Modal remains open when invalid salary is entered
+    Given I am on the Web Tables tab
+    When I click the "Add" button to open the registration modal
+    And I enter an invalid salary "xyz"
+    And I click "Submit" in the modal
+    Then the registration modal should remain open
+
+  Scenario: Disabled radio button cannot be selected
+    Given I am on the Radio Button tab
+    When I click on the "No" radio button
+    Then the "No" radio button should remain unchecked
