@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative path validation for DemoQA Elements",
-  "exported_at": "2026-05-15T11:33:40.609602",
+  "exported_at": "2026-05-15T13:18:38.332471",
   "framework": "playwright",
   "language": "typescript",
   "scenario_format": "gherkin",

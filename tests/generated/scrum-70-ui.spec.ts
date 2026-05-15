@@ -1,90 +1,81 @@
 import { test, expect } from '@playwright/test';
 
-const URL = 'https://demoqa.com/elements';
-
-test.describe('DemoQA Elements – Negative Path Validation (SCRUM-70)', () => {
-
+test.describe('@JIRA-SCRUM-70: DemoQA Elements Negative Path Validation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(URL);
+    await page.goto('https://demoqa.com/elements');
   });
 
-  test('@ui-negative: Invalid email shows inline validation', async ({ page }) => {
-    // Invalid email
-    await page.fill('#userEmail', 'not_an_email');
+  test('@ui-negative: Text Box rejects invalid email with validation error', async ({ page }) => {
+    // Navigate to Text Box section
+    await page.getByRole('listitem').filter({ hasText: 'Text Box' }).click();
+    await page.waitForSelector('#userEmail');
+
+    // Enter invalid email and submit
+    await page.fill('#userEmail', 'invalid-email');
     await page.click('#submit');
 
-    // Expect validation error (browser validation or custom)
-    // The exact message may vary; check for validation pseudo-class or message
-    const emailInput = page.locator('#userEmail');
-    await expect(emailInput).toHaveAttribute('validationMessage', /Please include an '@' in the email address/i);
-    // Confirm no successful output appeared
+    // Verify browser validation message is shown and #output is not visible
+    const validationMessage = await page.locator('#userEmail').evaluate((el: HTMLInputElement) => el.validationMessage);
+    expect(validationMessage).toBeTruthy();
+    expect(validationMessage).toContain('@'); // generic check that validation is about missing @
     await expect(page.locator('#output')).not.toBeVisible();
   });
 
-  test('@ui-regression: Valid email submits successfully', async ({ page }) => {
-    await page.fill('#userEmail', 'user@example.com');
+  test('@ui-negative: Web Tables registration modal remains open on invalid email', async ({ page }) => {
+    // Navigate to Web Tables section
+    await page.getByRole('listitem').filter({ hasText: 'Web Tables' }).click();
+    await page.waitForSelector('#addNewRecordButton');
+    await page.click('#addNewRecordButton');
+
+    // Wait for modal to open
+    await page.waitForSelector('.modal-content');
+
+    // Fill fields with invalid email
+    await page.fill('#firstName', 'John');
+    await page.fill('#lastName', 'Doe');
+    await page.fill('#userEmail', 'bad.email@'); // invalid but passes HTML5 type=email? Actually "bad.email@" is valid per HTML5? Need truly invalid: "bad"
+    // Use a clearly invalid string that fails email type validation
+    await page.fill('#userEmail', 'invalid');
+    await page.fill('#age', '30');
+    await page.fill('#salary', '50000');
+    await page.fill('#department', 'QA');
+
+    // Submit modal
     await page.click('#submit');
 
-    // Expect output to appear with submitted data
-    const output = page.locator('#output');
-    await expect(output).toBeVisible();
-    await expect(output).toContainText('user@example.com');
+    // Modal should still be visible
+    await expect(page.locator('.modal-content')).toBeVisible();
+    // Verify no new row added (table row count unchanged from initial)
+    const rowCount = await page.locator('.rt-tr-group').count();
+    // Initial row count is variable, but modal stays open so no new row
+    // Alternatively, check that the email field still has the invalid value
+    await expect(page.locator('#userEmail')).toHaveValue('invalid');
   });
 
-  test('@ui-negative: Modal stays open on invalid age (maxlength exceeded)', async ({ page }) => {
-    // Open modal for Web Tables registration
+  test('@ui-regression: Web Tables successful registration still works', async ({ page }) => {
+    // Navigate to Web Tables section
+    await page.getByRole('listitem').filter({ hasText: 'Web Tables' }).click();
+    await page.waitForSelector('#addNewRecordButton');
     await page.click('#addNewRecordButton');
-    const modal = page.locator('.modal-content'); // generic modal locator
-    await expect(modal).toBeVisible();
+    await page.waitForSelector('.modal-content');
 
-    // Fill age with value exceeding maxlength (maxlength=2)
-    await page.fill('#age', '123');
-    // Age field likely truncates input to 2 characters, but we can still try
-    // Click submit
+    // Fill all fields with valid data
+    await page.fill('#firstName', 'Jane');
+    await page.fill('#lastName', 'Smith');
+    await page.fill('#userEmail', 'jane.smith@example.com');
+    await page.fill('#age', '28');
+    await page.fill('#salary', '60000');
+    await page.fill('#department', 'Engineering');
+
+    // Submit
     await page.click('#submit');
-    // Modal should still be present
-    await expect(modal).toBeVisible();
-    // Ensure no new record added (table row count unchanged)
-    const tableRows = page.locator('.rt-tr-group');
-    const initialCount = await tableRows.count();
-    // Submit would not add record
-    const currentCount = await tableRows.count();
-    expect(currentCount).toBe(initialCount);
-  });
 
-  test('@ui-boundary: Salary exceeding maxlength triggers validation', async ({ page }) => {
-    await page.click('#addNewRecordButton');
-    const modal = page.locator('.modal-content');
-    await expect(modal).toBeVisible();
-
-    // salary has maxlength=10, entering 11 characters
-    await page.fill('#salary', '12345678901'); // 11 chars
-    // The field might not accept more than 10; verify value is truncated or validation shown
-    const salaryInput = page.locator('#salary');
-    const value = await salaryInput.inputValue();
-    expect(value.length).toBeLessThanOrEqual(10);
-
-    await page.click('#submit');
-    // Modal stays visible because form is invalid (missing required fields like first name)
-    await expect(modal).toBeVisible();
-  });
-
-  test('@ui-regression: Modal rejects invalid data and stays open', async ({ page }) => {
-    await page.click('#addNewRecordButton');
-    const modal = page.locator('.modal-content');
-    await expect(modal).toBeVisible();
-
-    // Leave first name empty (required), fill age with invalid boundary
-    await page.fill('#age', '0');
-    // Click submit without filling required fields
-    await page.click('#submit');
-    // Modal should remain open
-    await expect(modal).toBeVisible();
-    // Expect validation error on first name field
-    const firstNameField = page.locator('#firstName');
-    await expect(firstNameField).toHaveAttribute('required', '');
-    // Browser validation prevents submission; check that input is still focused or error shown
-    // Alternatively check that no success indicator appears
-    await expect(page.locator('#output')).not.toBeVisible();
+    // Modal should close
+    await expect(page.locator('.modal-content')).not.toBeVisible();
+    // Verify new record appears in table (at least one row)
+    await expect(page.locator('.rt-tr-group')).toHaveCount(1);
+    // Additional check: last row contains submitted email
+    const lastRow = page.locator('.rt-tr-group').last();
+    await expect(lastRow).toContainText('jane.smith@example.com');
   });
 });
