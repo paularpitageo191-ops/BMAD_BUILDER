@@ -1,30 +1,12 @@
 {
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
-  "ticket_summary": "Negative path validation for DemoQA Elements",
-  "exported_at": "2026-05-15T13:18:38.332471",
+  "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
+  "exported_at": "2026-05-16T20:41:40.702998",
   "framework": "playwright",
   "language": "typescript",
   "scenario_format": "gherkin",
   "files": [
-    {
-      "agent": "API",
-      "feature": "tests/gherkin/scrum-70-api.feature",
-      "code": "tests/generated/scrum-70-api.spec.ts",
-      "provider": "deepseek",
-      "framework": "playwright",
-      "language": "typescript",
-      "scenario_format": "gherkin"
-    },
-    {
-      "agent": "FUNCTIONAL",
-      "feature": "tests/gherkin/scrum-70-functional.feature",
-      "code": "tests/generated/scrum-70-functional.spec.ts",
-      "provider": "deepseek",
-      "framework": "playwright",
-      "language": "typescript",
-      "scenario_format": "gherkin"
-    },
     {
       "agent": "UI",
       "feature": "tests/gherkin/scrum-70-ui.feature",
@@ -32,7 +14,38 @@
       "provider": "deepseek",
       "framework": "playwright",
       "language": "typescript",
-      "scenario_format": "gherkin"
+      "scenario_format": "gherkin",
+      "contract_quality": "Strict",
+      "design_only": false,
+      "functional_areas": [
+        "Radio Button",
+        "Text Box",
+        "UI Stability",
+        "Web Tables"
+      ],
+      "source_references": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "Screenshot: Invalid numeric input behavior (baseline)",
+        "Screenshot: Valid input \u2192 output section rendered",
+        "Test Data: Empty/null inputs",
+        "Test Data: Invalid email formats",
+        "Test Data: Non-numeric values",
+        "Test Data: Non-numeric values (e.g., abc, 12ab)"
+      ],
+      "execution_readiness": {
+        "status": "strong",
+        "reasoning": "UI/DOM evidence is concrete enough for executable UI generation.",
+        "evidence": [
+          "jira comments available",
+          "13 jira attachment(s) available",
+          "15 source reference(s) in approved planning scope",
+          "story text or dom context contains explicit ui signals",
+          "document-heavy requirement context detected"
+        ]
+      }
     },
     {
       "agent": "REGRESSION",
@@ -41,7 +54,38 @@
       "provider": "deepseek",
       "framework": "playwright",
       "language": "typescript",
-      "scenario_format": "gherkin"
+      "scenario_format": "gherkin",
+      "contract_quality": "Strict",
+      "design_only": false,
+      "functional_areas": [
+        "Radio Button",
+        "Text Box",
+        "UI Stability",
+        "Web Tables"
+      ],
+      "source_references": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "Screenshot: Invalid numeric input behavior (baseline)",
+        "Screenshot: Valid input \u2192 output section rendered",
+        "Test Data: Empty/null inputs",
+        "Test Data: Invalid email formats",
+        "Test Data: Non-numeric values",
+        "Test Data: Non-numeric values (e.g., abc, 12ab)"
+      ],
+      "execution_readiness": {
+        "status": "strong",
+        "reasoning": "There is enough technical context to support executable coverage where the approved scope requires it.",
+        "evidence": [
+          "jira comments available",
+          "13 jira attachment(s) available",
+          "15 source reference(s) in approved planning scope",
+          "story text or dom context contains explicit ui signals",
+          "document-heavy requirement context detected"
+        ]
+      }
     }
   ]
 }

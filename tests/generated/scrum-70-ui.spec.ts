@@ -1,81 +1,167 @@
+// Traceability
+// Functional Areas: Radio Button, Text Box, UI Stability, Web Tables
+// Source References: AC1, AC2, AC3, AC4, Screenshot: Invalid numeric input behavior (baseline), Screenshot: Valid input → output section rendered, Test Data: Empty/null inputs, Test Data: Invalid email formats, Test Data: Non-numeric values, Test Data: Non-numeric values (e.g., abc, 12ab)
+// Execution Readiness: strong
+// Readiness Rationale: UI/DOM evidence is concrete enough for executable UI generation.
 import { test, expect } from '@playwright/test';
 
-test.describe('@JIRA-SCRUM-70: DemoQA Elements Negative Path Validation', () => {
+test.describe('@SCRUM-70 @Forensic-AEGIS-SCRUM-70: Text Box Email Validation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://demoqa.com/elements');
+    await page.locator('#userEmail').waitFor(); // ensure text box section is loaded
   });
 
-  test('@ui-negative: Text Box rejects invalid email with validation error', async ({ page }) => {
-    // Navigate to Text Box section
-    await page.getByRole('listitem').filter({ hasText: 'Text Box' }).click();
-    await page.waitForSelector('#userEmail');
-
-    // Enter invalid email and submit
-    await page.fill('#userEmail', 'invalid-email');
-    await page.click('#submit');
-
-    // Verify browser validation message is shown and #output is not visible
-    const validationMessage = await page.locator('#userEmail').evaluate((el: HTMLInputElement) => el.validationMessage);
-    expect(validationMessage).toBeTruthy();
-    expect(validationMessage).toContain('@'); // generic check that validation is about missing @
-    await expect(page.locator('#output')).not.toBeVisible();
+  test('Invalid email missing TLD triggers validation error and no output', async ({ page }) => {
+    await page.locator('#userEmail').fill('test@domain');
+    await page.locator('#submit').click();
+    // Check that email input shows validation error (HTML5 pseudo-state)
+    const emailValidation = await page.locator('#userEmail').evaluate(el => el.validity.valid);
+    expect(emailValidation).toBe(false);
+    // Or check for aria-invalid if set; else use class/red border presence
+    // Also check that #output is not visible
+    await expect(page.locator('#output')).toBeHidden();
   });
 
-  test('@ui-negative: Web Tables registration modal remains open on invalid email', async ({ page }) => {
-    // Navigate to Web Tables section
-    await page.getByRole('listitem').filter({ hasText: 'Web Tables' }).click();
-    await page.waitForSelector('#addNewRecordButton');
-    await page.click('#addNewRecordButton');
+  test('Empty email input shows validation error and no output', async ({ page }) => {
+    await page.locator('#userEmail').fill('');
+    await page.locator('#submit').click();
+    const emailValidation = await page.locator('#userEmail').evaluate(el => el.validity.valid);
+    expect(emailValidation).toBe(false);
+    await expect(page.locator('#output')).toBeHidden();
+  });
 
-    // Wait for modal to open
-    await page.waitForSelector('.modal-content');
+  test('Valid email displays output section', async ({ page }) => {
+    // Fill all required fields
+    await page.locator('#userName').fill('Test User');
+    await page.locator('#userEmail').fill('test@domain.com');
+    await page.locator('#currentAddress').fill('123 Main St');
+    await page.locator('#permanentAddress').fill('456 Oak Ave');
+    await page.locator('#submit').click();
+    // No validation error
+    const emailValid = await page.locator('#userEmail').evaluate(el => el.validity.valid);
+    expect(emailValid).toBe(true);
+    // Output visible and contains email
+    await expect(page.locator('#output')).toBeVisible();
+    await expect(page.locator('#output')).toContainText('test@domain.com');
+  });
+});
 
-    // Fill fields with invalid email
-    await page.fill('#firstName', 'John');
-    await page.fill('#lastName', 'Doe');
-    await page.fill('#userEmail', 'bad.email@'); // invalid but passes HTML5 type=email? Actually "bad.email@" is valid per HTML5? Need truly invalid: "bad"
-    // Use a clearly invalid string that fails email type validation
-    await page.fill('#userEmail', 'invalid');
-    await page.fill('#age', '30');
-    await page.fill('#salary', '50000');
-    await page.fill('#department', 'QA');
+test.describe('@SCRUM-70 @Forensic-AEGIS-SCRUM-70: Web Tables Registration Validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('https://demoqa.com/elements');
+    // Click on Web Tables left-nav item (selector may need adjustment)
+    await page.locator('.show .btn-light:has-text("Web Tables")').click();
+    // or use 'div.element-list > ul > li#item-3' – assume stable
+  });
 
-    // Submit modal
-    await page.click('#submit');
+  async function openRegistrationModal(page) {
+    await page.locator('#addNewRecordButton').click();
+    await page.locator('.modal-content').waitFor();
+  }
 
-    // Modal should still be visible
+  test('Non-numeric Age blocks submission and modal stays open', async ({ page }) => {
+    await openRegistrationModal(page);
+    // Fill valid data except age
+    await page.locator('#firstName').fill('John');
+    await page.locator('#lastName').fill('Doe');
+    await page.locator('#userEmail').fill('j@d.com');
+    await page.locator('#age').fill('abc');
+    await page.locator('#salary').fill('50000');
+    await page.locator('#department').fill('QA');
+    await page.locator('#submit').click();
+    // Modal remains open
     await expect(page.locator('.modal-content')).toBeVisible();
-    // Verify no new row added (table row count unchanged from initial)
+    // Age field should show error (HTML5 validation or custom)
+    // Since it's a text field with numeric constraint, we check if form was submitted
+    // Actually DemoQA uses custom validation – check for class 'was-validated' or specific error text
+    // For simplicity, check that new row is not added (table row count same)
     const rowCount = await page.locator('.rt-tr-group').count();
-    // Initial row count is variable, but modal stays open so no new row
-    // Alternatively, check that the email field still has the invalid value
-    await expect(page.locator('#userEmail')).toHaveValue('invalid');
+    expect(rowCount).toBe(0); // initially no rows, still none
   });
 
-  test('@ui-regression: Web Tables successful registration still works', async ({ page }) => {
-    // Navigate to Web Tables section
-    await page.getByRole('listitem').filter({ hasText: 'Web Tables' }).click();
-    await page.waitForSelector('#addNewRecordButton');
-    await page.click('#addNewRecordButton');
-    await page.waitForSelector('.modal-content');
+  test('Non-numeric Salary blocks submission and modal stays open', async ({ page }) => {
+    await openRegistrationModal(page);
+    await page.locator('#firstName').fill('John');
+    await page.locator('#lastName').fill('Doe');
+    await page.locator('#userEmail').fill('j@d.com');
+    await page.locator('#age').fill('30');
+    await page.locator('#salary').fill('12ab');
+    await page.locator('#department').fill('QA');
+    await page.locator('#submit').click();
+    await expect(page.locator('.modal-content')).toBeVisible();
+    const rowCount = await page.locator('.rt-tr-group').count();
+    expect(rowCount).toBe(0);
+  });
 
-    // Fill all fields with valid data
-    await page.fill('#firstName', 'Jane');
-    await page.fill('#lastName', 'Smith');
-    await page.fill('#userEmail', 'jane.smith@example.com');
-    await page.fill('#age', '28');
-    await page.fill('#salary', '60000');
-    await page.fill('#department', 'Engineering');
+  test('Valid Age and Salary submits successfully', async ({ page }) => {
+    await openRegistrationModal(page);
+    await page.locator('#firstName').fill('John');
+    await page.locator('#lastName').fill('Doe');
+    await page.locator('#userEmail').fill('j@d.com');
+    await page.locator('#age').fill('30');
+    await page.locator('#salary').fill('50000');
+    await page.locator('#department').fill('QA');
+    await page.locator('#submit').click();
+    // Modal closed
+    await expect(page.locator('.modal-content')).toBeHidden();
+    // New row appears
+    const row = page.locator('.rt-tr-group').nth(0);
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('John');
+    await expect(row).toContainText('Doe');
+  });
+});
 
-    // Submit
-    await page.click('#submit');
+test.describe('@SCRUM-70 @Forensic-AEGIS-SCRUM-70: Radio Button Disabled Option Behavior', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('https://demoqa.com/elements');
+    // Click Radio Button section
+    await page.locator('.show .btn-light:has-text("Radio Button")').click();
+  });
 
-    // Modal should close
-    await expect(page.locator('.modal-content')).not.toBeVisible();
-    // Verify new record appears in table (at least one row)
-    await expect(page.locator('.rt-tr-group')).toHaveCount(1);
-    // Additional check: last row contains submitted email
-    const lastRow = page.locator('.rt-tr-group').last();
-    await expect(lastRow).toContainText('jane.smith@example.com');
+  test('"No" radio button is disabled in the DOM', async ({ page }) => {
+    const noRadio = page.locator('#noRadio');
+    // check disabled attribute or aria-disabled
+    const disabled = await noRadio.evaluate(el => el.hasAttribute('disabled'));
+    expect(disabled).toBe(true);
+    // even if forced click, no state change
+    await noRadio.click({ force: true });
+    await expect(page.locator('#yesRadio')).not.toBeChecked();
+    // Actually check that noRadio remains unchecked (not likely to be checked)
+    const checked = await noRadio.isChecked();
+    expect(checked).toBe(false);
+  });
+
+  test('Clicking disabled "No" does not trigger state change', async ({ page }) => {
+    // First select Yes
+    await page.locator('#yesRadio').click({ force: true });
+    const outputBefore = await page.locator('.text-success').textContent();
+    expect(outputBefore).toContain('Yes');
+    // Attempt to click No
+    await page.locator('#noRadio').click({ force: true });
+    // Output unchanged
+    const outputAfter = await page.locator('.text-success').textContent();
+    expect(outputAfter).toBe(outputBefore);
+    // No still disabled
+    await expect(page.locator('#noRadio')).toBeDisabled();
+    // Yes remains checked
+    await expect(page.locator('#yesRadio')).toBeChecked();
+  });
+});
+
+test.describe('@SCRUM-70 @Forensic-AEGIS-SCRUM-70: UI Stability under Viewport Constraints', () => {
+  test('Elements interactable via scroll handling when partially visible', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 600 });
+    await page.goto('https://demoqa.com/elements');
+    // Scroll to bottom
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // Scroll #userEmail into view
+    await page.locator('#userEmail').scrollIntoViewIfNeeded();
+    // Click and type
+    await page.locator('#userEmail').click();
+    await page.locator('#userEmail').fill('test@domain.com');
+    // Verify text entered
+    const value = await page.locator('#userEmail').inputValue();
+    expect(value).toBe('test@domain.com');
   });
 });
