@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T20:26:05.369027",
+  "exported_at": "2026-05-19T20:39:30.228436",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
@@ -26,13 +26,23 @@
         "Web Tables"
       ],
       "source_references": [
-        "AC1",
         "AC2",
         "AC3",
-        "AC4",
-        "Screenshots - Radio Button Behavior",
-        "Screenshots - Text Box Validation",
-        "Screenshots - Web Tables Validation"
+        "AC4 \u2013 UI Stability",
+        "Radio Button Behavior (Disabled option)",
+        "Responsive design best practices",
+        "Test Data: empty/null inputs",
+        "Test Data: invalid email formats",
+        "Test Data: non-numeric values (12ab)",
+        "Test Data: non-numeric values (abc)",
+        "Test Data: test@domain",
+        "Text Box Validation",
+        "Text Box Validation (Invalid email)",
+        "Text Box Validation (Valid input)",
+        "UI Validation Reference (screenshots)",
+        "UI Validation Reference screenshots",
+        "Web Tables Validation",
+        "Web Tables Validation (Invalid numeric input)"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -40,7 +50,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "16 source reference(s) in approved planning scope",
+          "21 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
@@ -49,13 +59,13 @@
     {
       "agent": "REGRESSION",
       "feature": "tests/testcases/scrum-70-regression.md",
-      "code": "src/test/java/generated/Scrum70Regression.java",
+      "code": null,
       "provider": "deepseek",
       "framework": "selenium",
       "language": "java",
       "scenario_format": "excel-testcases",
-      "contract_quality": "Strict",
-      "design_only": false,
+      "contract_quality": "Design-Only",
+      "design_only": true,
       "functional_areas": [
         "Radio Button",
         "Text Box",
@@ -63,13 +73,23 @@
         "Web Tables"
       ],
       "source_references": [
-        "AC1",
         "AC2",
         "AC3",
-        "AC4",
-        "Screenshots - Radio Button Behavior",
-        "Screenshots - Text Box Validation",
-        "Screenshots - Web Tables Validation"
+        "AC4 \u2013 UI Stability",
+        "Radio Button Behavior (Disabled option)",
+        "Responsive design best practices",
+        "Test Data: empty/null inputs",
+        "Test Data: invalid email formats",
+        "Test Data: non-numeric values (12ab)",
+        "Test Data: non-numeric values (abc)",
+        "Test Data: test@domain",
+        "Text Box Validation",
+        "Text Box Validation (Invalid email)",
+        "Text Box Validation (Valid input)",
+        "UI Validation Reference (screenshots)",
+        "UI Validation Reference screenshots",
+        "Web Tables Validation",
+        "Web Tables Validation (Invalid numeric input)"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -77,7 +97,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "16 source reference(s) in approved planning scope",
+          "21 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
