@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T20:16:13.905706",
+  "exported_at": "2026-05-19T20:26:05.369027",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
@@ -22,15 +22,17 @@
       "functional_areas": [
         "Radio Button",
         "Text Box",
+        "UI Stability",
         "Web Tables"
       ],
       "source_references": [
         "AC1",
         "AC2",
         "AC3",
-        "Test Data: empty/null inputs",
-        "Test Data: invalid email formats",
-        "Test Data: non-numeric values"
+        "AC4",
+        "Screenshots - Radio Button Behavior",
+        "Screenshots - Text Box Validation",
+        "Screenshots - Web Tables Validation"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -38,7 +40,44 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "14 source reference(s) in approved planning scope",
+          "16 source reference(s) in approved planning scope",
+          "story text or dom context contains explicit ui signals",
+          "document-heavy requirement context detected"
+        ]
+      }
+    },
+    {
+      "agent": "REGRESSION",
+      "feature": "tests/testcases/scrum-70-regression.md",
+      "code": "src/test/java/generated/Scrum70Regression.java",
+      "provider": "deepseek",
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
+      "contract_quality": "Strict",
+      "design_only": false,
+      "functional_areas": [
+        "Radio Button",
+        "Text Box",
+        "UI Stability",
+        "Web Tables"
+      ],
+      "source_references": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "Screenshots - Radio Button Behavior",
+        "Screenshots - Text Box Validation",
+        "Screenshots - Web Tables Validation"
+      ],
+      "execution_readiness": {
+        "status": "strong",
+        "reasoning": "There is enough technical context to support executable coverage where the approved scope requires it.",
+        "evidence": [
+          "jira comments available",
+          "13 jira attachment(s) available",
+          "16 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
