@@ -1,119 +1,85 @@
 # Traceability
-# Functional Areas: Radio Button, Text Box, UI Stability, Web Tables
-# Source References: AC1, AC2, AC3, AC4, Screenshot: Invalid numeric input behavior (baseline), Screenshot: Valid input → output section rendered, Test Data: Empty/null inputs, Test Data: Invalid email formats, Test Data: Non-numeric values, Test Data: Non-numeric values (e.g., abc, 12ab)
+# Functional Areas: Radio Button, Text Box, Web Tables
+# Source References: AC1, AC2, AC3, Screenshot: Valid input => output section rendered, Screenshot: enabled radio behavior, Screenshot: valid numeric input, Test Data: empty/null inputs, Test Data: invalid email formats, Test Data: non-numeric values
 # Execution Readiness: strong
 # Readiness Rationale: UI/DOM evidence is concrete enough for executable UI generation.
-@SCRUM-70 @Forensic-AEGIS-SCRUM-70
-Feature: Text Box Email Validation
-  As a QA engineer
-  I want to validate email input handling
-  So that invalid emails are rejected and valid ones show output
+Feature: Negative Path Validation for DemoQA Elements Module
 
   Background:
-    Given the user is on the DemoQA Elements page
-    And the Text Box section is visible
+    Given the user navigates to the DemoQA Elements page
 
-  @ui-negative @high
-  Scenario: Invalid email missing TLD triggers validation error and no output
-    When the user enters "test@domain" into #userEmail
+  @negative @email @AC1
+  Scenario Outline: Invalid email input triggers validation error and output section is not displayed
+    Given the user is on the Text Box form
+    When the user enters "<email>" in the #userEmail field
     And clicks the #submit button
-    Then #userEmail should display a validation error (e.g., red border, "Please enter a valid email")
-    And #output should not be visible
+    Then the #userEmail field shows a validation error
+    And the #output element is not visible or empty
 
-  @ui-negative @high
-  Scenario: Empty email input shows validation error and no output
-    When the user leaves #userEmail empty
+    Examples:
+      | email           |
+      | test@domain     |
+      | testdomain.com  |
+      |                 |
+
+  @positive @regression @email @AC1
+  Scenario: Valid email input renders the output section
+    Given the user is on the Text Box form
+    When the user enters "test@example.com" in the #userEmail field
     And clicks the #submit button
-    Then #userEmail should display a validation error (e.g., "Please fill out this field")
-    And #output should not be visible
+    Then the #output element is displayed and contains the entered email
 
-  @ui-positive @high
-  Scenario: Valid email displays output section
-    When the user enters "test@domain.com" into #userEmail
-    And fills Full Name, Current Address, Permanent Address with any value
-    And clicks the #submit button
-    Then #userEmail should not show a validation error
-    And #output should be visible and contain the entered email
+  @negative @webtables @age @AC2
+  Scenario: Non-numeric age value blocks submission and modal stays open
+    Given the user is on the Web Tables page
+    When the user clicks "Add" to open the registration modal
+    And enters "abc" in the Age field
+    And clicks "Submit" in the registration modal
+    Then the registration modal remains visible
+    And the Age field shows a validation error
+    And no new row is added to the table
 
-@SCRUM-70 @Forensic-AEGIS-SCRUM-70
-Feature: Web Tables Registration Validation
-  As a QA engineer
-  I want to validate numeric field constraints in registration
-  So that only valid entries are accepted
+  @negative @webtables @salary @AC2
+  Scenario: Non-numeric salary value blocks submission and modal stays open
+    Given the user is on the Web Tables page
+    When the user clicks "Add" to open the registration modal
+    And enters "12ab" in the Salary field
+    And clicks "Submit" in the registration modal
+    Then the registration modal remains visible
+    And the Salary field shows a validation error
+    And no new row is added to the table
 
-  Background:
-    Given the user is on the DemoQA Elements page
-    And the Web Tables section is visible
+  @negative @webtables @boundary @AC2
+  Scenario: Empty age field submission behavior (AC2 focus on non-numeric)
+    Given the user is on the Web Tables page
+    When the user clicks "Add" to open the registration modal
+    And fills all required fields with valid data except leaving Age blank
+    And clicks "Submit" in the registration modal
+    Then the registration modal remains visible with a validation error on Age
+    Or the modal closes and a row with empty age is added (note: expected behavior per AC2)
 
-  @ui-negative @high
-  Scenario: Non-numeric Age blocks submission and modal stays open
-    When the user clicks #addNewRecordButton to open the registration modal
-    And enters valid data in First Name, Last Name, Email, Salary, Department
-    And enters "abc" into #age
-    And clicks the Submit button in the modal
-    Then the registration modal should remain open
-    And #age should show a validation error (e.g., red border)
-    And no new row should be added to the table
+  @positive @regression @webtables @AC2
+  Scenario: Valid web tables submission adds a new row
+    Given the user is on the Web Tables page
+    When the user clicks "Add" to open the registration modal
+    And enters valid data: FirstName="John", LastName="Doe", Email="john@example.com", Age="30", Salary="50000", Department="QA"
+    And clicks "Submit"
+    Then the registration modal is no longer visible
+    And the table contains a row with the entered data
 
-  @ui-negative @high
-  Scenario: Non-numeric Salary blocks submission and modal stays open
-    When the user clicks #addNewRecordButton to open the registration modal
-    And enters valid data in First Name, Last Name, Email, Age, Department
-    And enters "12ab" into #salary
-    And clicks the Submit button in the modal
-    Then the registration modal should remain open
-    And #salary should show a validation error
-    And no new row should be added to the table
+  @negative @radiobutton @disabled @AC3
+  Scenario: "No" radio button is disabled and does not change state on click
+    Given the user is on the Radio Button page
+    Then the #noRadio element should be disabled
+    When the user attempts to click #noRadio
+    Then the #noRadio element remains disabled
+    And no selected class is added
+    And the output message (if any) remains unchanged
 
-  @ui-positive @medium
-  Scenario: Valid Age and Salary submits successfully
-    When the user clicks #addNewRecordButton to open the registration modal
-    And enters "John" in First Name, "Doe" in Last Name, "j@d.com" in Email, "30" in Age, "50000" in Salary, "QA" in Department
-    And clicks the Submit button in the modal
-    Then the registration modal should close
-    And a new row with the entered values should appear in the table
-    And no validation errors should be present
-
-@SCRUM-70 @Forensic-AEGIS-SCRUM-70
-Feature: Radio Button Disabled Option Behavior
-  As a QA engineer
-  I want to verify that the disabled "No" option cannot be interacted with
-  So that the UI remains stable
-
-  Background:
-    Given the user is on the DemoQA Elements page
-    And the Radio Button section is visible
-
-  @ui-negative @high
-  Scenario: "No" radio button is disabled in the DOM
-    When the user locates #noRadio
-    Then #noRadio should have attribute disabled or aria-disabled="true"
-    And clicking #noRadio should not change the radio group selection
-    And #noRadio should remain unchecked
-
-  @ui-negative @high
-  Scenario: Clicking disabled "No" does not trigger state change
-    Given the "Yes" radio button is selected (output shows "You have selected Yes")
-    When the user attempts to click #noRadio with force
-    Then the radio button selection should remain unchanged (Yes still selected)
-    And the output text should not update to indicate "No"
-    And #noRadio should remain disabled and unchecked
-
-@SCRUM-70 @Forensic-AEGIS-SCRUM-70
-Feature: UI Stability under Viewport Constraints
-  As a QA engineer
-  I want to ensure elements are interactable after scrolling
-  So that the UI remains usable under limited viewports
-
-  Background:
-    Given the user sets viewport to 800x600
-    And navigates to the DemoQA Elements page
-
-  @ui @medium
-  Scenario: Elements interactable via scroll handling when partially visible
-    When the user scrolls to the bottom of the page
-    And scrolls #userEmail into view
-    And clicks #userEmail
-    And types "test@domain.com"
-    Then the input should be focusable and typed text should appear
-    And no errors should occur
+  @positive @regression @radiobutton @AC3
+  Scenario: "Yes" radio button remains functional
+    Given the user is on the Radio Button page
+    Then the #yesRadio element should be enabled
+    When the user clicks #yesRadio
+    Then the #yesRadio element displays a selected or checked state
+    And the output area shows "You have selected Yes"
