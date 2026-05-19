@@ -2,21 +2,21 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T19:46:21.200173",
-  "profile_preset": "gherkin-playwright",
-  "runner_mode": "feature-spec-ts",
-  "framework": "playwright",
-  "language": "typescript",
-  "scenario_format": "gherkin",
+  "exported_at": "2026-05-19T20:11:59.492151",
+  "profile_preset": "excel-selenium-java",
+  "runner_mode": "excel-json-java",
+  "framework": "selenium",
+  "language": "java",
+  "scenario_format": "excel-testcases",
   "files": [
     {
       "agent": "UI",
-      "feature": "tests/gherkin/scrum-70-ui.feature",
-      "code": "tests/generated/scrum-70-ui.spec.ts",
+      "feature": "tests/testcases/scrum-70-ui.md",
+      "code": "src/test/java/generated/Scrum70Ui.java",
       "provider": "deepseek",
-      "framework": "playwright",
-      "language": "typescript",
-      "scenario_format": "gherkin",
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
       "contract_quality": "Strict",
       "design_only": false,
       "functional_areas": [
@@ -28,9 +28,6 @@
         "AC1",
         "AC2",
         "AC3",
-        "Screenshot: Valid input => output section rendered",
-        "Screenshot: enabled radio behavior",
-        "Screenshot: valid numeric input",
         "Test Data: empty/null inputs",
         "Test Data: invalid email formats",
         "Test Data: non-numeric values"
@@ -41,7 +38,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "19 source reference(s) in approved planning scope",
+          "14 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
