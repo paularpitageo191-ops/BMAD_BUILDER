@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T20:50:08.964663",
+  "exported_at": "2026-05-19T21:01:03.764058",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
@@ -12,7 +12,7 @@
     {
       "agent": "UI",
       "feature": "tests/testcases/scrum-70-ui.md",
-      "code": "src/test/java/generated/Scrum70Ui.java",
+      "code": "src/test/java/generated/Scrum70UiTest.java",
       "provider": "deepseek",
       "framework": "selenium",
       "language": "java",
@@ -22,17 +22,18 @@
       "functional_areas": [
         "Radio Button",
         "Text Box",
+        "UI Stability",
         "Web Tables"
       ],
       "source_references": [
         "AC1",
         "AC2",
         "AC3",
-        "Boundary analysis",
-        "Boundary: negative numbers",
+        "AC4",
+        "Test Data: empty/null inputs",
         "Test Data: invalid email formats",
         "Test Data: non-numeric values",
-        "UI Validation Reference: valid input"
+        "UI Validation Reference screenshots"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -40,43 +41,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "16 source reference(s) in approved planning scope",
-          "story text or dom context contains explicit ui signals",
-          "document-heavy requirement context detected"
-        ]
-      }
-    },
-    {
-      "agent": "REGRESSION",
-      "feature": "tests/testcases/scrum-70-regression.md",
-      "code": null,
-      "provider": "deepseek",
-      "framework": "selenium",
-      "language": "java",
-      "scenario_format": "excel-testcases",
-      "contract_quality": "Design-Only",
-      "design_only": true,
-      "functional_areas": [
-        "Radio Button",
-        "Text Box",
-        "Web Tables"
-      ],
-      "source_references": [
-        "AC1",
-        "AC2",
-        "AC3",
-        "Boundary analysis",
-        "Boundary: negative numbers",
-        "Test Data: invalid email formats",
-        "Test Data: non-numeric values"
-      ],
-      "execution_readiness": {
-        "status": "strong",
-        "reasoning": "There is enough technical context to support executable coverage where the approved scope requires it.",
-        "evidence": [
-          "jira comments available",
-          "13 jira attachment(s) available",
-          "13 source reference(s) in approved planning scope",
+          "18 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
