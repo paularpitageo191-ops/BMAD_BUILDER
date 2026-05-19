@@ -85,18 +85,26 @@ public class Scrum70RegressionTest {
         driver.findElement(By.id("salary")).sendKeys("50000");
         driver.findElement(By.id("department")).sendKeys("QA");
 
-        driver.findElement(By.id("submit")).click();
+        WebElement submit = driver.findElement(By.id("submit"));
+        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", submit);
+        wait.until(ExpectedConditions.elementToBeClickable(submit)).click();
 
         // Wait for modal to close
         wait.until(ExpectedConditions.invisibilityOf(modal));
 
-        // Verify the submitted row becomes visible in the rendered table body.
-        WebElement createdRow = wait.until(
+        // Filter by the submitted email to make the rendered row deterministic.
+        WebElement searchBox = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("searchBox")));
+        searchBox.clear();
+        searchBox.sendKeys("john@doe.com");
+
+        WebElement emailCell = wait.until(
                 ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[contains(@class,'rt-tr-group')][contains(.,'John')][contains(.,'Doe')]")
+                        By.xpath("//div[contains(@class,'rt-td')][normalize-space()='john@doe.com']")
                 )
         );
-        assertTrue(createdRow.getText().contains("john@doe.com"), "Created row should contain the submitted email");
+        WebElement row = emailCell.findElement(By.xpath("./ancestor::div[contains(@class,'rt-tr-group')]"));
+        assertTrue(row.getText().contains("John"), "Created row should contain the submitted first name");
+        assertTrue(row.getText().contains("Doe"), "Created row should contain the submitted last name");
     }
 
     @Test
