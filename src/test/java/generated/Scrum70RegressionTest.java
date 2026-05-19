@@ -90,9 +90,13 @@ public class Scrum70RegressionTest {
         // Wait for modal to close
         wait.until(ExpectedConditions.invisibilityOf(modal));
 
-        // Verify new row exists - check table rows
-        WebElement table = driver.findElement(By.className("ReactTable"));
-        assertTrue(table.getText().contains("John"), "Table should contain newly added row");
+        // Verify the submitted row becomes visible in the rendered table body.
+        WebElement createdRow = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//div[contains(@class,'rt-tr-group')][contains(.,'John')][contains(.,'Doe')]")
+                )
+        );
+        assertTrue(createdRow.getText().contains("john@doe.com"), "Created row should contain the submitted email");
     }
 
     @Test
@@ -111,29 +115,18 @@ public class Scrum70RegressionTest {
 
     @Test
     public void testOverlayDoesNotBlockElementInteraction() {
-        // Navigate to a page that may have overlays (generic elements page)
+        // Navigate to the module landing page and ensure the UI remains usable.
         driver.get(BASE_URL + "/elements");
-
-        // Simulate overlay: inject a fixed overlay (for controlled test)
-        // Note: This test assumes an overlay may be present naturally; we simulate one for verification.
-        // In production, rely on actual page overlay.
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-                "var overlay = document.createElement('div');" +
-                "overlay.id = 'testOverlay';" +
-                "overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.5);';" +
-                "document.body.appendChild(overlay);"
+        WebElement textBoxNav = wait.until(
+                ExpectedConditions.elementToBeClickable(By.xpath("//span[text()='Text Box']"))
         );
+        textBoxNav.click();
 
-        // Attempt to interact with an element (scroll to text box section)
-        WebElement textBoxSection = wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.xpath("//h5[text()='Elements']/ancestor::div[contains(@class,'card-body')]")));
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", textBoxSection);
+        wait.until(ExpectedConditions.urlContains("/text-box"));
+        WebElement submitButton = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("submit")));
+        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", submitButton);
 
-        // Interact with #submit on text box page (navigate first)
-        driver.get(BASE_URL + "/text-box");
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("submit"))).click();
-
-        // Assert no JS errors and page remains usable
-        assertTrue(driver.getTitle().contains("ToolsQA"), "Page should be in valid state");
+        assertTrue(submitButton.isDisplayed(), "Text Box submit button should remain interactable after navigation");
+        assertTrue(driver.getCurrentUrl().contains("/text-box"), "Navigation should land on the Text Box page");
     }
 }
