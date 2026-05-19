@@ -2,39 +2,36 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T21:09:11.622299",
-  "profile_preset": "gherkin-playwright",
-  "runner_mode": "feature-spec-ts",
-  "framework": "playwright",
-  "language": "typescript",
-  "scenario_format": "gherkin",
+  "exported_at": "2026-05-19T21:49:35.045201",
+  "profile_preset": "excel-selenium-java",
+  "runner_mode": "excel-json-java",
+  "framework": "selenium",
+  "language": "java",
+  "scenario_format": "excel-testcases",
   "files": [
     {
       "agent": "UI",
-      "feature": "tests/gherkin/scrum-70-ui.feature",
-      "code": "tests/generated/scrum-70-ui.spec.ts",
+      "feature": "tests/testcases/scrum-70-ui.md",
+      "code": "src/test/java/generated/Scrum70UiTest.java",
       "provider": "deepseek",
-      "framework": "playwright",
-      "language": "typescript",
-      "scenario_format": "gherkin",
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
       "contract_quality": "Strict",
       "design_only": false,
       "functional_areas": [
-        "Radio Button",
-        "Text Box",
-        "Web Tables"
+        "Elements - Radio Button",
+        "Elements - Text Box",
+        "Elements - Web Tables"
       ],
       "source_references": [
-        "AC1",
-        "AC2",
-        "AC3",
-        "Screenshots: Disabled option",
-        "Screenshots: Invalid numeric input",
-        "Screenshots: Text Box Validation",
-        "Screenshots: Valid input",
-        "Test Data: empty/null inputs",
-        "Test Data: invalid email formats",
-        "Test Data: non-numeric values"
+        "Screenshot: Radio Button Behavior - Disabled Option",
+        "Screenshot: Text Box Validation - Invalid Email",
+        "Screenshot: Text Box Validation - Valid Input",
+        "Screenshot: Web Tables Validation - Invalid Input",
+        "Screenshot: Web Tables Validation - Valid Input (implied)",
+        "Test data: empty/null inputs",
+        "Test data: invalid email formats (e.g., test@domain, missing TLD)"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -42,7 +39,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "19 source reference(s) in approved planning scope",
+          "10 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
@@ -50,24 +47,21 @@
     },
     {
       "agent": "REGRESSION",
-      "feature": "tests/gherkin/scrum-70-regression.feature",
-      "code": "tests/generated/scrum-70-regression.spec.ts",
+      "feature": "tests/testcases/scrum-70-regression.md",
+      "code": null,
       "provider": "deepseek",
-      "framework": "playwright",
-      "language": "typescript",
-      "scenario_format": "gherkin",
-      "contract_quality": "Strict",
-      "design_only": false,
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
+      "contract_quality": "Design-Only",
+      "design_only": true,
       "functional_areas": [
-        "Radio Button",
-        "Text Box",
-        "Web Tables"
+        "Elements - Text Box",
+        "Elements - Web Tables"
       ],
       "source_references": [
-        "AC1",
-        "AC2",
-        "AC3",
-        "Screenshots: Valid input"
+        "Screenshot: Text Box Validation - Valid Input",
+        "Screenshot: Web Tables Validation - Valid Input (implied)"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -75,7 +69,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "4 source reference(s) in approved planning scope",
+          "2 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
