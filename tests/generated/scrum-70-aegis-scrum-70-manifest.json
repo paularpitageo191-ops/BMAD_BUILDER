@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T20:11:59.492151",
+  "exported_at": "2026-05-19T20:15:45.940914",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
