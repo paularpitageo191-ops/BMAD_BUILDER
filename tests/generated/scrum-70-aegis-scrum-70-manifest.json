@@ -1,0 +1,90 @@
+{
+  "forensic_id": "AEGIS-SCRUM-70",
+  "ticket_key": "SCRUM-70",
+  "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
+  "exported_at": "2026-05-20T00:01:21.722599",
+  "profile_preset": "excel-selenium-java",
+  "runner_mode": "excel-json-java",
+  "framework": "selenium",
+  "language": "java",
+  "scenario_format": "excel-testcases",
+  "files": [
+    {
+      "agent": "UI",
+      "feature": "tests/testcases/scrum-70-ui.md",
+      "code": null,
+      "provider": "deepseek",
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
+      "contract_quality": "Design-Only",
+      "design_only": true,
+      "functional_areas": [
+        "Email Validation",
+        "Radio Button Validation",
+        "Web Tables",
+        "Web Tables Validation"
+      ],
+      "source_references": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "General regression",
+        "Screenshots: Disabled option \u2192 no interaction",
+        "Screenshots: Valid input \u2192 output section rendered",
+        "Test Data: empty/null inputs",
+        "Test Data: invalid email formats",
+        "Test Data: non-numeric values"
+      ],
+      "execution_readiness": {
+        "status": "strong",
+        "reasoning": "UI/DOM evidence is concrete enough for executable UI generation.",
+        "evidence": [
+          "jira comments available",
+          "13 jira attachment(s) available",
+          "17 source reference(s) in approved planning scope",
+          "story text or dom context contains explicit ui signals",
+          "document-heavy requirement context detected"
+        ]
+      }
+    },
+    {
+      "agent": "REGRESSION",
+      "feature": "tests/testcases/scrum-70-regression.md",
+      "code": "src/test/java/generated/Scrum70RegressionTest.java",
+      "provider": "deepseek",
+      "framework": "selenium",
+      "language": "java",
+      "scenario_format": "excel-testcases",
+      "contract_quality": "Strict",
+      "design_only": false,
+      "functional_areas": [
+        "Email Validation",
+        "Radio Button Validation",
+        "Web Tables",
+        "Web Tables Validation"
+      ],
+      "source_references": [
+        "AC1",
+        "AC2",
+        "AC3",
+        "General regression",
+        "Screenshots: Disabled option \u2192 no interaction",
+        "Screenshots: Valid input \u2192 output section rendered",
+        "Test Data: invalid email formats",
+        "Test Data: non-numeric values"
+      ],
+      "execution_readiness": {
+        "status": "strong",
+        "reasoning": "There is enough technical context to support executable coverage where the approved scope requires it.",
+        "evidence": [
+          "jira comments available",
+          "13 jira attachment(s) available",
+          "15 source reference(s) in approved planning scope",
+          "story text or dom context contains explicit ui signals",
+          "document-heavy requirement context detected"
+        ]
+      }
+    }
+  ]
+}
