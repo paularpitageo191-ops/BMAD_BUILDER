@@ -1,20 +1,14 @@
 // Traceability
-// Functional Areas: Elements - Radio Button, Elements - Text Box, Elements - Web Tables
-// Source References: Screenshot: Radio Button Behavior - Disabled Option, Screenshot: Text Box Validation - Invalid Email, Screenshot: Text Box Validation - Valid Input, Screenshot: Web Tables Validation - Invalid Input, Screenshot: Web Tables Validation - Valid Input (implied), Test data: empty/null inputs, Test data: invalid email formats (e.g., test@domain, missing TLD)
+// Functional Areas: Radio Button, Text Box, Web Tables
+// Source References: AC1 – Email Validation, AC2 – Web Tables Validation, AC3 – Radio Button Validation, Regression impact from negative changes, Screenshot: Disabled option → no interaction or state change, Screenshot: Invalid email → validation error, no output, Screenshot: Invalid numeric input → submission blocked, modal remains open, Screenshot: Radio button behavior, Screenshot: Valid input → output section rendered, Test Data: Empty/null inputs, Test Data: Invalid email formats, Test Data: Invalid email formats (e.g., test@domain, missing TLD), Test Data: Non-numeric values for numeric fields (e.g., abc, 12ab)
 // Execution Readiness: strong
 // Readiness Rationale: UI/DOM evidence is concrete enough for executable UI generation.
-package qa.scrum70;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -26,18 +20,15 @@ public class Scrum70UiTest {
 
     private WebDriver driver;
     private WebDriverWait wait;
-
     private static final String BASE_URL = "https://demoqa.com/elements";
-    private static final String SIDEBAR_TEXT_BOX = "Text Box";
-    private static final String SIDEBAR_WEB_TABLES = "Web Tables";
-    private static final String SIDEBAR_RADIO_BUTTON = "Radio Button";
 
     @BeforeEach
     public void setUp() {
-        driver = new ChromeDriver();
-        driver.manage().window().maximize();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage");
+        driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        driver.get(BASE_URL);
+        driver.manage().window().maximize();
     }
 
     @AfterEach
@@ -47,186 +38,310 @@ public class Scrum70UiTest {
         }
     }
 
-    // ============ Helper Methods ============
-
-    private void clickSidebarItem(String itemText) {
-        WebElement sidebarItem = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//div[@class='element-group']//span[text()='" + itemText + "']/..")));
-        sidebarItem.click();
+    // Helper to scroll element into view
+    private void scrollToElement(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
     }
 
-    private void clickSubmit() {
-        WebElement submitButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
-        submitButton.click();
+    // Helper to click using JS if element is obstructed
+    private void clickViaJs(WebElement element) {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
     }
 
-    private boolean isValidationErrorShown(By fieldLocator) {
-        WebElement field = driver.findElement(fieldLocator);
-        String classAttr = field.getAttribute("class");
-        return classAttr != null && (classAttr.contains("is-invalid") || classAttr.contains("error"));
-    }
-
-    private boolean isOutputDisplayed() {
-        try {
-            WebElement output = driver.findElement(By.id("output"));
-            return output.isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
-
-    private void openRegistrationModal() {
-        WebElement addButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("addNewRecordButton")));
-        addButton.click();
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("registration-form-modal")));
-    }
-
-    private void fillRegistrationField(String fieldId, String value) {
-        WebElement field = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id(fieldId)));
-        field.clear();
-        if (value != null) {
-            field.sendKeys(value);
-        }
-    }
-
-    private boolean isModalOpen() {
-        try {
-            return driver.findElement(By.id("registration-form-modal")).isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
-    }
-
-    // ============ Test Cases ============
-
-    // TC-01: Invalid Email (missing TLD)
+    // ========== TC01: Email Validation – Missing TLD ==========
     @Test
-    public void testEmailInvalidMissingTLD() {
-        clickSidebarItem(SIDEBAR_TEXT_BOX);
-        driver.findElement(By.id("userEmail")).sendKeys("test@domain");
-        clickSubmit();
-        assertTrue(isValidationErrorShown(By.id("userEmail")), "Validation error should appear on email field");
-        assertFalse(isOutputDisplayed(), "Output should not be displayed for invalid email");
-    }
+    public void testEmailValidationMissingTLD() {
+        driver.get(BASE_URL);
+        // Navigate to Text Box section (click accordion item)
+        WebElement textBoxAccordion = driver.findElement(By.id("item-0"));
+        scrollToElement(textBoxAccordion);
+        textBoxAccordion.click();
 
-    // TC-02: Empty email
-    @Test
-    public void testEmailEmpty() {
-        clickSidebarItem(SIDEBAR_TEXT_BOX);
-        driver.findElement(By.id("userEmail")).clear();
-        clickSubmit();
-        assertTrue(isValidationErrorShown(By.id("userEmail")), "Validation error should appear on empty email");
-        assertFalse(isOutputDisplayed(), "Output should not be displayed for empty email");
-    }
+        // Wait for text box fields to be visible
+        WebElement userEmail = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userEmail")));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
 
-    // TC-03: Valid email produces output
-    @Test
-    public void testEmailValidProducesOutput() {
-        clickSidebarItem(SIDEBAR_TEXT_BOX);
-        driver.findElement(By.id("userName")).sendKeys("Test User");
-        driver.findElement(By.id("userEmail")).sendKeys("test@example.com");
-        driver.findElement(By.id("currentAddress")).sendKeys("123 Main St");
-        driver.findElement(By.id("permanentAddress")).sendKeys("456 Oak Ave");
-        clickSubmit();
-        assertFalse(isValidationErrorShown(By.id("userEmail")), "No validation error for valid email");
-        assertTrue(isOutputDisplayed(), "Output should be displayed for valid submission");
-    }
-
-    // TC-04: Web Tables - non-numeric Age
-    @Test
-    public void testWebTablesNonNumericAge() {
-        clickSidebarItem(SIDEBAR_WEB_TABLES);
-        openRegistrationModal();
-        fillRegistrationField("firstName", "John");
-        fillRegistrationField("lastName", "Doe");
-        fillRegistrationField("userEmail", "j@test.com");
-        fillRegistrationField("age", "abc");
-        fillRegistrationField("salary", "50000");
-        fillRegistrationField("department", "QA");
-        WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+        userEmail.sendKeys("test@domain");
+        scrollToElement(submitBtn);
         submitBtn.click();
-        assertTrue(isModalOpen(), "Modal should remain open after invalid age");
-        assertTrue(isValidationErrorShown(By.id("age")), "Validation error should appear on Age field");
+
+        // Check for validation error (HTML5 validation message or custom class)
+        // DemoQA uses HTML5 validation; we check the validation message property
+        String validationMessage = (String) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].validationMessage;", userEmail);
+        assertFalse(validationMessage.isEmpty(), "Validation message should be present for invalid email");
+
+        // Verify output not displayed
+        WebElement outputSection = driver.findElement(By.id("output"));
+        assertFalse(outputSection.isDisplayed(), "#output should not be visible for invalid input");
     }
 
-    // TC-05: Web Tables - non-numeric Salary
+    // ========== TC02: Email Validation – Missing @ ==========
     @Test
-    public void testWebTablesNonNumericSalary() {
-        clickSidebarItem(SIDEBAR_WEB_TABLES);
-        openRegistrationModal();
-        fillRegistrationField("firstName", "John");
-        fillRegistrationField("lastName", "Doe");
-        fillRegistrationField("userEmail", "j@test.com");
-        fillRegistrationField("age", "30");
-        fillRegistrationField("salary", "12ab");
-        fillRegistrationField("department", "QA");
-        WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+    public void testEmailValidationMissingAt() {
+        driver.get(BASE_URL);
+        WebElement textBoxAccordion = driver.findElement(By.id("item-0"));
+        scrollToElement(textBoxAccordion);
+        textBoxAccordion.click();
+
+        WebElement userEmail = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userEmail")));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        userEmail.sendKeys("testdomain.com");
+        scrollToElement(submitBtn);
         submitBtn.click();
-        assertTrue(isModalOpen(), "Modal should remain open after invalid salary");
-        assertTrue(isValidationErrorShown(By.id("salary")), "Validation error should appear on Salary field");
+
+        String validationMessage = (String) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].validationMessage;", userEmail);
+        assertFalse(validationMessage.isEmpty(), "Validation message should appear for email without @");
+
+        WebElement outputSection = driver.findElement(By.id("output"));
+        assertFalse(outputSection.isDisplayed(), "#output should remain hidden");
     }
 
-    // TC-06: Web Tables - empty Age and Salary
+    // ========== TC03: Email Validation – Empty Input ==========
     @Test
-    public void testWebTablesEmptyAgeAndSalary() {
-        clickSidebarItem(SIDEBAR_WEB_TABLES);
-        openRegistrationModal();
-        fillRegistrationField("firstName", "John");
-        fillRegistrationField("lastName", "Doe");
-        fillRegistrationField("userEmail", "j@test.com");
-        fillRegistrationField("age", null);
-        fillRegistrationField("salary", null);
-        fillRegistrationField("department", "QA");
-        WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+    public void testEmailValidationEmpty() {
+        driver.get(BASE_URL);
+        WebElement textBoxAccordion = driver.findElement(By.id("item-0"));
+        scrollToElement(textBoxAccordion);
+        textBoxAccordion.click();
+
+        WebElement userEmail = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userEmail")));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        userEmail.clear();
+        scrollToElement(submitBtn);
         submitBtn.click();
-        assertTrue(isModalOpen(), "Modal should remain open when Age and Salary empty");
-        assertTrue(isValidationErrorShown(By.id("age")), "Validation error on Age field");
-        assertTrue(isValidationErrorShown(By.id("salary")), "Validation error on Salary field");
+
+        // HTML5 required validation fires for empty field
+        String validationMessage = (String) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].validationMessage;", userEmail);
+        assertFalse(validationMessage.isEmpty(), "Empty email should trigger validation message");
+
+        WebElement outputSection = driver.findElement(By.id("output"));
+        assertFalse(outputSection.isDisplayed(), "#output should not appear for empty input");
     }
 
-    // TC-07: Web Tables - valid data submission
+    // ========== TC04: Web Tables – Invalid Age (non-numeric) ==========
     @Test
-    public void testWebTablesValidSubmission() {
-        clickSidebarItem(SIDEBAR_WEB_TABLES);
-        openRegistrationModal();
-        fillRegistrationField("firstName", "John");
-        fillRegistrationField("lastName", "Doe");
-        fillRegistrationField("userEmail", "j@test.com");
-        fillRegistrationField("age", "30");
-        fillRegistrationField("salary", "50000");
-        fillRegistrationField("department", "QA");
-        WebElement submitBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+    public void testWebTablesInvalidAge() {
+        driver.get(BASE_URL);
+        // Navigate to Web Tables section
+        WebElement webTablesAccordion = driver.findElement(By.id("item-3"));
+        scrollToElement(webTablesAccordion);
+        webTablesAccordion.click();
+
+        WebElement addBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("addNewRecordButton")));
+        addBtn.click();
+
+        // Wait for registration modal
+        WebElement modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("modal-content")));
+        WebElement firstName = driver.findElement(By.id("firstName"));
+        WebElement lastName = driver.findElement(By.id("lastName"));
+        WebElement userEmail = driver.findElement(By.id("userEmail"));
+        WebElement age = driver.findElement(By.id("age"));
+        WebElement salary = driver.findElement(By.id("salary"));
+        WebElement department = driver.findElement(By.id("department"));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        firstName.sendKeys("Jane");
+        lastName.sendKeys("Doe");
+        userEmail.sendKeys("jane@example.com");
+        age.sendKeys("abc");
+        salary.sendKeys("50000");
+        department.sendKeys("QA");
+
+        scrollToElement(submitBtn);
         submitBtn.click();
-        assertFalse(isModalOpen(), "Modal should close after valid submission");
-        // Verify new row appears - assume table id is 'app' or 'welcome'? Use a generic check.
-        WebElement table = driver.findElement(By.className("rt-table"));
-        assertTrue(table.getText().contains("John"), "Table should contain the newly added first name");
+
+        // Modal should remain open
+        assertTrue(modal.isDisplayed(), "Modal should remain open after invalid age");
+
+        // Check age field validation message
+        String validationMessage = (String) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].validationMessage;", age);
+        assertFalse(validationMessage.isEmpty(), "Age field should show validation error");
     }
 
-    // TC-08: Radio Button - 'No' remains disabled
+    // ========== TC05: Web Tables – Invalid Salary (12ab) ==========
     @Test
-    public void testRadioButtonNoDisabled() {
-        clickSidebarItem(SIDEBAR_RADIO_BUTTON);
+    public void testWebTablesInvalidSalary() {
+        driver.get(BASE_URL);
+        WebElement webTablesAccordion = driver.findElement(By.id("item-3"));
+        scrollToElement(webTablesAccordion);
+        webTablesAccordion.click();
+
+        WebElement addBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("addNewRecordButton")));
+        addBtn.click();
+
+        WebElement modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("modal-content")));
+        WebElement firstName = driver.findElement(By.id("firstName"));
+        WebElement lastName = driver.findElement(By.id("lastName"));
+        WebElement userEmail = driver.findElement(By.id("userEmail"));
+        WebElement age = driver.findElement(By.id("age"));
+        WebElement salary = driver.findElement(By.id("salary"));
+        WebElement department = driver.findElement(By.id("department"));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        firstName.sendKeys("John");
+        lastName.sendKeys("Smith");
+        userEmail.sendKeys("john@example.com");
+        age.sendKeys("30");
+        salary.sendKeys("12ab");
+        department.sendKeys("IT");
+
+        scrollToElement(submitBtn);
+        submitBtn.click();
+
+        assertTrue(modal.isDisplayed(), "Modal should remain open after invalid salary");
+
+        String validationMessage = (String) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].validationMessage;", salary);
+        assertFalse(validationMessage.isEmpty(), "Salary field should show validation error");
+    }
+
+    // ========== TC06: Radio Button – Disabled State Verification ==========
+    @Test
+    public void testRadioButtonDisabledState() {
+        driver.get(BASE_URL);
+        WebElement radioBtnAccordion = driver.findElement(By.id("item-2"));
+        scrollToElement(radioBtnAccordion);
+        radioBtnAccordion.click();
+
         WebElement noRadio = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("noRadio")));
-        assertFalse(noRadio.isEnabled(), "#noRadio should be disabled initially");
-        // Attempt click – should not change state
-        noRadio.click();
-        assertFalse(noRadio.isEnabled(), "#noRadio should remain disabled after click");
-        // Verify no selection indicator (e.g., no 'checked' class)
-        String classAfter = noRadio.getAttribute("class");
-        assertFalse(classAfter.contains("checked"), "No checked class should appear");
+        // Check disabled attribute
+        String disabledAttr = noRadio.getAttribute("disabled");
+        assertNotNull(disabledAttr, "#noRadio should have disabled attribute");
+        // or use isEnabled()
+        assertFalse(noRadio.isEnabled(), "#noRadio should be disabled");
+
+        // Try to click using JS (since Selenium will throw if element not interactable)
+        try {
+            clickViaJs(noRadio);
+        } catch (Exception e) {
+            // Click may be ignored; we still verify state
+        }
+
+        // Verify still unchecked
+        assertNull(noRadio.getAttribute("checked"), "Radio should remain unchecked after click");
+
+        // No success message should appear
+        boolean successMessagePresent = driver.findElements(By.xpath("//*[contains(text(),'You have selected No')]")).size() > 0;
+        assertFalse(successMessagePresent, "No success message should appear for disabled radio");
     }
 
-    // TC-09: Multiple invalid email formats (data-driven)
-    @ParameterizedTest
-    @ValueSource(strings = {"test@domain", "test@.com", "@domain.com", "test@domain.", ""})
-    public void testEmailMultipleInvalidFormats(String invalidEmail) {
-        clickSidebarItem(SIDEBAR_TEXT_BOX);
-        WebElement emailField = driver.findElement(By.id("userEmail"));
-        emailField.clear();
-        emailField.sendKeys(invalidEmail);
-        clickSubmit();
-        assertTrue(isValidationErrorShown(By.id("userEmail")), "Validation error expected for invalid email: " + invalidEmail);
-        assertFalse(isOutputDisplayed(), "Output should not be displayed for invalid email: " + invalidEmail);
+    // ========== TC07: Radio Button – No Interaction Effect ==========
+    @Test
+    public void testRadioButtonNoInteractionEffect() {
+        driver.get(BASE_URL);
+        WebElement radioBtnAccordion = driver.findElement(By.id("item-2"));
+        scrollToElement(radioBtnAccordion);
+        radioBtnAccordion.click();
+
+        WebElement noRadio = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("noRadio")));
+        assertFalse(noRadio.isEnabled(), "#noRadio must be disabled");
+
+        // Attempt click
+        clickViaJs(noRadio);
+
+        // Verify checked attribute absent
+        assertNull(noRadio.getAttribute("checked"), "Radio should remain unchecked after click");
+
+        // No success message
+        assertTrue(driver.findElements(By.xpath("//*[text()='You have selected No']")).isEmpty(),
+                "No success message should appear");
+
+        // Other radios unchanged – just verify 'Yes' still clickable
+        WebElement yesRadio = driver.findElement(By.id("yesRadio"));
+        assertTrue(yesRadio.isEnabled(), "Yes radio should remain enabled");
+    }
+
+    // ========== TC08: Regression – Valid Email Output ==========
+    @Test
+    public void testValidEmailOutput() {
+        driver.get(BASE_URL);
+        WebElement textBoxAccordion = driver.findElement(By.id("item-0"));
+        scrollToElement(textBoxAccordion);
+        textBoxAccordion.click();
+
+        WebElement userEmail = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userEmail")));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        userEmail.sendKeys("test@example.com");
+        scrollToElement(submitBtn);
+        submitBtn.click();
+
+        // Wait for output section to be visible
+        WebElement outputSection = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("output")));
+        assertTrue(outputSection.isDisplayed(), "#output should be visible");
+
+        String outputText = outputSection.getText();
+        assertTrue(outputText.contains("Email:test@example.com"), "Output should contain the entered email");
+    }
+
+    // ========== TC09: Regression – Valid Web Table Entry ==========
+    @Test
+    public void testValidWebTableEntry() {
+        driver.get(BASE_URL);
+        WebElement webTablesAccordion = driver.findElement(By.id("item-3"));
+        scrollToElement(webTablesAccordion);
+        webTablesAccordion.click();
+
+        WebElement addBtn = wait.until(ExpectedConditions.elementToBeClickable(By.id("addNewRecordButton")));
+        addBtn.click();
+
+        WebElement modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("modal-content")));
+        WebElement firstName = driver.findElement(By.id("firstName"));
+        WebElement lastName = driver.findElement(By.id("lastName"));
+        WebElement userEmail = driver.findElement(By.id("userEmail"));
+        WebElement age = driver.findElement(By.id("age"));
+        WebElement salary = driver.findElement(By.id("salary"));
+        WebElement department = driver.findElement(By.id("department"));
+        WebElement submitBtn = driver.findElement(By.id("submit"));
+
+        firstName.sendKeys("Alice");
+        lastName.sendKeys("Johnson");
+        userEmail.sendKeys("alice@example.com");
+        age.sendKeys("25");
+        salary.sendKeys("50000");
+        department.sendKeys("Engineering");
+
+        scrollToElement(submitBtn);
+        submitBtn.click();
+
+        // Wait for modal to close
+        wait.until(ExpectedConditions.invisibilityOf(modal));
+
+        // Verify new row appears in table
+        WebElement tableBody = driver.findElement(By.className("rt-tbody"));
+        String tableText = tableBody.getText();
+        assertTrue(tableText.contains("Alice"), "Table should contain new entry with first name Alice");
+        assertTrue(tableText.contains("Johnson"), "Table should contain new entry with last name Johnson");
+        assertTrue(tableText.contains("alice@example.com"), "Table should contain new email");
+        assertTrue(tableText.contains("25"), "Table should contain age 25");
+        assertTrue(tableText.contains("50000"), "Table should contain salary 50000");
+        assertTrue(tableText.contains("Engineering"), "Table should contain department Engineering");
+    }
+
+    // ========== TC10: Regression – Radio Button 'Yes' Works ==========
+    @Test
+    public void testRadioButtonYesWorks() {
+        driver.get(BASE_URL);
+        WebElement radioBtnAccordion = driver.findElement(By.id("item-2"));
+        scrollToElement(radioBtnAccordion);
+        radioBtnAccordion.click();
+
+        WebElement yesRadio = wait.until(ExpectedConditions.elementToBeClickable(By.id("yesRadio")));
+        // Use JS click to avoid overlay issues
+        clickViaJs(yesRadio);
+
+        // Verify checked
+        assertTrue(yesRadio.isSelected(), "Yes radio should be selected after click");
+
+        // Verify success message
+        WebElement successMsg = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//*[contains(text(),'You have selected Yes')]")));
+        assertTrue(successMsg.isDisplayed(), "Success message should appear for Yes radio");
     }
 }

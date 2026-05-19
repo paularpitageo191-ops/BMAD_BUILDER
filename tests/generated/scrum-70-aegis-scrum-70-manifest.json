@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-19T21:49:35.045201",
+  "exported_at": "2026-05-19T21:59:32.382980",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
@@ -20,18 +20,24 @@
       "contract_quality": "Strict",
       "design_only": false,
       "functional_areas": [
-        "Elements - Radio Button",
-        "Elements - Text Box",
-        "Elements - Web Tables"
+        "Radio Button",
+        "Text Box",
+        "Web Tables"
       ],
       "source_references": [
-        "Screenshot: Radio Button Behavior - Disabled Option",
-        "Screenshot: Text Box Validation - Invalid Email",
-        "Screenshot: Text Box Validation - Valid Input",
-        "Screenshot: Web Tables Validation - Invalid Input",
-        "Screenshot: Web Tables Validation - Valid Input (implied)",
-        "Test data: empty/null inputs",
-        "Test data: invalid email formats (e.g., test@domain, missing TLD)"
+        "AC1 \u2013 Email Validation",
+        "AC2 \u2013 Web Tables Validation",
+        "AC3 \u2013 Radio Button Validation",
+        "Regression impact from negative changes",
+        "Screenshot: Disabled option \u2192 no interaction or state change",
+        "Screenshot: Invalid email \u2192 validation error, no output",
+        "Screenshot: Invalid numeric input \u2192 submission blocked, modal remains open",
+        "Screenshot: Radio button behavior",
+        "Screenshot: Valid input \u2192 output section rendered",
+        "Test Data: Empty/null inputs",
+        "Test Data: Invalid email formats",
+        "Test Data: Invalid email formats (e.g., test@domain, missing TLD)",
+        "Test Data: Non-numeric values for numeric fields (e.g., abc, 12ab)"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -39,7 +45,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "10 source reference(s) in approved planning scope",
+          "20 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
@@ -48,20 +54,22 @@
     {
       "agent": "REGRESSION",
       "feature": "tests/testcases/scrum-70-regression.md",
-      "code": null,
+      "code": "src/test/java/generated/Scrum70RegressionTest.java",
       "provider": "deepseek",
       "framework": "selenium",
       "language": "java",
       "scenario_format": "excel-testcases",
-      "contract_quality": "Design-Only",
-      "design_only": true,
+      "contract_quality": "Strict",
+      "design_only": false,
       "functional_areas": [
-        "Elements - Text Box",
-        "Elements - Web Tables"
+        "Radio Button",
+        "Text Box",
+        "Web Tables"
       ],
       "source_references": [
-        "Screenshot: Text Box Validation - Valid Input",
-        "Screenshot: Web Tables Validation - Valid Input (implied)"
+        "Regression impact from negative changes",
+        "Screenshot: Radio button behavior",
+        "Screenshot: Valid input \u2192 output section rendered"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -69,7 +77,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "2 source reference(s) in approved planning scope",
+          "5 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
