@@ -2,7 +2,7 @@
   "forensic_id": "AEGIS-SCRUM-70",
   "ticket_key": "SCRUM-70",
   "ticket_summary": "Negative Path Validation for DemoQA Elements Module",
-  "exported_at": "2026-05-20T00:32:11.221368",
+  "exported_at": "2026-05-20T00:50:00.600446",
   "profile_preset": "excel-selenium-java",
   "runner_mode": "excel-json-java",
   "framework": "selenium",
@@ -20,16 +20,19 @@
       "contract_quality": "Strict",
       "design_only": false,
       "functional_areas": [
-        "Radio Button",
-        "Text Box",
-        "UI Stability",
-        "Web Tables"
+        "Elements Module - Email",
+        "Elements Module - Radio Button",
+        "Elements Module - Web Tables"
       ],
       "source_references": [
         "AC1",
+        "AC1 (implied by negative ref)",
         "AC2",
         "AC3",
-        "AC4"
+        "Test Data: Empty/null inputs",
+        "Test Data: Invalid email formats",
+        "Test Data: Non-numeric values",
+        "UI Validation Reference"
       ],
       "execution_readiness": {
         "status": "strong",
@@ -37,7 +40,7 @@
         "evidence": [
           "jira comments available",
           "13 jira attachment(s) available",
-          "12 source reference(s) in approved planning scope",
+          "15 source reference(s) in approved planning scope",
           "story text or dom context contains explicit ui signals",
           "document-heavy requirement context detected"
         ]
