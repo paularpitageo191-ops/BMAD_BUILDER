@@ -1,112 +1,90 @@
 # Traceability
 Feature: Negative Path Validation for DemoQA Elements Module
-  Stories: SCRUM-70
-  Tags: demoqa elements tc-negative
-  Acceptance Criteria: AC1 (Email validation), AC2 (Web Tables validation), AC3 (Radio Button validation), AC4 (UI stability)
+  As a QA Engineer
+  I want to validate negative scenarios in the Elements module
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
 
   Background:
-    Given the user is on the DemoQA Elements page
-    And the user has navigated to the relevant sub-module per scenario
+    Given I am on the DemoQA Elements page
 
-  @AC1 @negative @email
-  Scenario: Invalid email – missing domain name blocks submission (AC1)
-    Given the user is on the Text Box page
-    When the user enters "test@.com" into the #userEmail field
-    And clicks the #submit button
-    Then the #userEmail field shows a validation error (browser-level "Please enter a valid email")
-    And the #output section remains hidden
+  # -- Email Validation (AC1) --
 
-  @AC1 @negative @email
-  Scenario: Invalid email – missing top-level domain blocks submission (AC1)
-    Given the user is on the Text Box page
-    When the user enters "test@domain" into the #userEmail field
-    And clicks the #submit button
-    Then the #userEmail field shows a validation error
-    And the #output section remains hidden
+  Scenario: Email Validation - Invalid format (missing TLD) blocks submission and hides output
+    Given I am on the Text Box page
+    When I enter invalid email "test@domain" into #userEmail
+    And I click #submit
+    Then #userEmail should show validation error (red border/error message)
+    And #output should not be visible in the DOM
 
-  @AC1 @functional @regression
-  Scenario: Valid email – positive control for baseline (AC1)
-    Given the user is on the Text Box page
-    When the user enters "user@example.com" into the #userEmail field
-    And clicks the #submit button
-    Then no validation error appears on #userEmail
-    And the #output section becomes visible containing the submitted email
+  Scenario: Email Validation - Valid format displays output
+    Given I am on the Text Box page
+    When I enter valid email "test@example.com" into #userEmail
+    And I click #submit
+    Then #userEmail should have no validation error
+    And #output should be visible with the submitted email displayed
 
-  @AC2 @negative @webtables
-  Scenario: Non-numeric Age blocks Web Tables submission (AC2)
-    Given the user is on the Web Tables page
-    When the user clicks the #addNewRecordButton to open the registration modal
-    And enters valid data for all fields except Age
-    And enters "abc" into the #age field
-    And clicks the modal's Submit button
-    Then the registration modal remains open
-    And no new row is added to the table
-    And the #age field indicates a validation error
+  # -- Web Tables Validation (AC2) --
 
-  @AC2 @negative @webtables
-  Scenario: Non-numeric Salary blocks Web Tables submission (AC2)
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters valid data for all fields except Salary
-    And enters "12ab" into the #salary field
-    And clicks the modal's Submit button
-    Then the registration modal remains open
-    And no new row is added to the table
-    And the #salary field indicates a validation error
+  Scenario: Web Tables - Non-numeric Age blocks submission and modal stays open
+    Given I am on the Web Tables page
+    And I open the registration modal via Add button
+    When I fill all required fields with valid data except Age
+    And I enter "abc" into #age
+    And I click Submit in the modal
+    Then the registration modal should remain open
+    And #age should show a validation error "Please enter a number"
+    And no new row should be added to the table
 
-  @AC2 @boundary @webtables
-  Scenario: Empty Age field blocks Web Tables submission (AC2)
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters valid data for all fields except Age, leaving Age blank
-    And clicks the modal's Submit button
-    Then the registration modal remains open
-    And the #age field shows a required validation error
-    And no new row is added to the table
+  Scenario: Web Tables - Non-numeric Salary blocks submission and modal stays open
+    Given I am on the Web Tables page
+    And I open the registration modal via Add button
+    When I fill all required fields with valid data except Salary
+    And I enter "12ab" into #salary
+    And I click Submit in the modal
+    Then the registration modal should remain open
+    And #salary should show a validation error "Please enter a number"
+    And no new row should be added to the table
 
-  @AC2 @functional @regression
-  Scenario: Valid numeric inputs for Web Tables submission – positive regression (AC2)
-    Given the user is on the Web Tables page
-    When the user opens the registration modal
-    And enters valid data including Age 25 and Salary 50000
-    And clicks the modal's Submit button
-    Then the registration modal closes
-    And a new row with the entered data appears in the table
+  Scenario: Web Tables - Empty Age and Salary block submission
+    Given I am on the Web Tables page
+    And I open the registration modal via Add button
+    When I fill all required fields with valid data but leave Age and Salary empty
+    And I click Submit in the modal
+    Then the registration modal should remain open
+    And #age and #salary should show required-field validation errors
+    And no new row should be added to the table
 
-  @AC3 @negative @radio
-  Scenario: "No" radio button remains disabled and non-interactable (AC3)
-    Given the user is on the Radio Button page
-    Then the #noRadio element has a disabled attribute
-    When the user attempts to click #noRadio
-    Then #noRadio remains disabled
-    And no output message appears stating "You have selected No"
-    And any previously selected radio button (e.g., "Yes") remains selected
+  Scenario: Web Tables - Valid Age and Salary submit successfully
+    Given I am on the Web Tables page
+    And I open the registration modal via Add button
+    When I fill all required fields with valid data: First Name "John", Last Name "Doe", Email "john@example.com", Age "30", Salary "50000", Department "QA"
+    And I click Submit in the modal
+    Then the registration modal should close
+    And a new row containing the submitted data should appear in the table
 
-  @AC4 @regression @uistability
-  Scenario: Overlay does not block Text Box submission (AC4)
-    Given the user is on the Text Box page
-    When an overlay is injected covering the form
-    And the user scrolls the #submit button into view
-    And enters a valid email into #userEmail
-    And clicks the #submit button
-    Then the #output section appears with the submitted email
-    And no JavaScript errors occur
+  # -- Radio Button Validation (AC3) --
 
-  @AC4 @regression @uistability
-  Scenario: Elements remain interactable via scroll under overlay (AC4)
-    Given the user is on the Radio Button page
-    When an overlay is injected covering the radio options
-    And the user scrolls the radio button container into view
-    And clicks the "Yes" radio option
-    Then the "Yes" radio becomes selected
-    And the output message displays "You have selected Yes"
-    And the overlay does not cause any blocking error
+  Scenario: Radio Button - Disabled "No" option remains non-interactable
+    Given I am on the Radio Button page
+    When I verify #noRadio has disabled attribute
+    And I attempt to click #noRadio
+    Then #noRadio should remain disabled
+    And no success message for "No" should appear
 
-  @AC1 @boundary @email
-  Scenario: Empty email input – edge case (Test Data)
-    Given the user is on the Text Box page
-    When the #userEmail field is empty
-    And the user clicks the #submit button
-    Then the #output section does not appear
-    And a validation error may appear on #userEmail (e.g., "Please fill out this field")
-    And the form is not submitted
+  Scenario: Radio Button - Enabled "Yes" option can be selected
+    Given I am on the Radio Button page
+    When I click "Yes" radio button
+    Then the "Yes" radio button should become selected
+    And confirmation text "You have selected Yes" should appear
+
+  # -- UI Stability (AC4) --
+
+  Scenario: UI Stability - Overlay obstruction does not break interaction on Text Box page
+    Given I am on the Text Box page
+    When I inject a fixed overlay covering the top half of the page
+    And I scroll #userEmail into view and click it
+    And I enter text "test@example.com" into #userEmail
+    And I click #submit
+    Then no JavaScript errors occur
+    And email validation still works as expected (valid input shows #output)
+    And after removing the overlay, the page is in normal state

@@ -1,37 +1,29 @@
 # Traceability
-Feature: Regression Guardrails for DemoQA Elements – SCRUM-70
-  As a QA regression safeguard
-  I want to revalidate key existing behaviors that could be disrupted by negative‑path validation changes
-  So that core functionality remains stable after introducing new validation rules
+Feature: Regression Guardrails for Negative Path Validation – DemoQA Elements
+  As a regression agent
+  I want to protect existing positive workflows from regression when negative validation logic is added
+  So that the application remains stable and previously working behavior is not broken.
 
-Scenario: Regression – Valid email input still renders output section
-  Given the user navigates to the DemoQA Elements Text Box page
-    And the #userEmail field is visible and enabled
-  When the user enters a valid email "user@example.com" into #userEmail
+  Scenario: Regression – Text box valid email output still displays after negative validation implementation
+    Given the user is on the Text Box page at https://demoqa.com/text-box
+    And the #userEmail field is visible and editable
+    When the user enters a valid email "test@example.com" in the Email field
     And clicks the #submit button
-  Then the #output section becomes visible
-    And the submitted email is displayed in the output
+    Then the #output element should be displayed
+    And #output should contain the submitted email
 
-Scenario: Regression – Web Tables accepts valid numeric inputs and adds row
-  Given the user navigates to the DemoQA Elements Web Tables page
-    And clicks the "Add" button to open the registration modal
-  When the user enters valid data including Age "25" and Salary "50000"
-    And clicks the modal "Submit" button
-  Then the registration modal closes
-    And a new row with the entered data appears in the table
+  Scenario: Regression – Web table row editing remains functional after negative Age validation
+    Given the user is on the Web Tables page at https://demoqa.com/webtables
+    And a row with valid data exists in the table (e.g., "John", "Doe", "john@example.com", "30", "50000", "QA")
+    When the user clicks the edit icon for that row
+    And changes the First Name to "RegressionTest"
+    And clicks Submit in the registration modal
+    Then the table should display "RegressionTest" in the first name column
+    And no validation errors should be visible
 
-Scenario: Regression – Text Box submission remains functional under overlay obstruction
-  Given the user navigates to the DemoQA Elements Text Box page
-    And a fixed overlay is injected covering the form area
-  When the user enters a valid email "user@example.com" into #userEmail
-    And scrolls #submit into view and clicks it
-  Then the #output section appears with the submitted email
-    And no JavaScript errors are thrown
-
-Scenario: Regression – Radio button selection works via scrolling under overlay obstruction
-  Given the user navigates to the DemoQA Elements Radio Button page
-    And a fixed overlay covers the radio options
-  When the user scrolls the "Yes" radio button into view
-    And clicks the "Yes" radio option
-  Then the output message displays "You have selected Yes"
-    And the "Yes" radio remains selected
+  Scenario: Regression – Radio button "Impressive" selection still works after "No" is confirmed disabled
+    Given the user is on the Radio Button page at https://demoqa.com/radio-button
+    And the "No" radio button is disabled
+    When the user clicks the "Impressive" radio button
+    Then a success message "You have selected Impressive" should appear
+    And the radio button for "Impressive" should have the “selected” state
