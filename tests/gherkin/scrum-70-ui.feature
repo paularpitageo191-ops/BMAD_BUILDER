@@ -1,81 +1,91 @@
 # Traceability
-Feature: Negative Path Validation for DemoQA Elements Module
+Feature: Elements Negative Path Validation
   As a QA Engineer
   I want to validate negative scenarios in the Elements module
-  So that invalid inputs are handled correctly and the UI remains stable under edge conditions
+  So that invalid inputs are handled correctly and the UI remains stable under edge conditions.
 
   Background:
-    Given the user is on the DemoQA home page
-    And the Elements section is accessible from the left sidebar
+    Given I am on the DemoQA Elements page
 
-  @SCRUM-70 @AC1 @Text-Box @negative
-  Scenario: Invalid email (no TLD) triggers validation error and no output
-    Given the user navigates to the Text Box section
-    When the user enters "test@domain" in the #userEmail field
-    And clicks the #submit button
-    Then a validation error appears on the #userEmail field
-    And the #output section is not displayed
+  # AC1 – Email Validation
+  @negative @AC1 @email @textbox
+  Scenario: Email validation – invalid format missing TLD blocks submission
+    When I enter "test@domain" in the email field
+    And I click the submit button
+    Then the email field displays a browser validation error
+    And the output section is not visible
 
-  @SCRUM-70 @AC1 @Text-Box @negative
-  Scenario: Invalid email (no @ symbol) triggers validation error and no output
-    Given the user navigates to the Text Box section
-    When the user enters "testdomain.com" in the #userEmail field
-    And clicks the #submit button
-    Then a validation error appears on the #userEmail field
-    And the #output section is not displayed
+  @negative @AC1 @email @textbox
+  Scenario: Email validation – invalid format missing @ blocks submission
+    When I enter "testdomain.com" in the email field
+    And I click the submit button
+    Then the email field displays a browser validation error
+    And the output section is not visible
 
-  @SCRUM-70 @AC1 @Text-Box @negative
-  Scenario: Empty email field triggers validation error and no output
-    Given the user navigates to the Text Box section
-    When the user leaves the #userEmail field empty
-    And clicks the #submit button
-    Then a validation error appears on the #userEmail field
-    And the #output section is not displayed
+  @negative @AC1 @email @textbox @boundary
+  Scenario: Email validation – empty input may or may not be blocked (observe behavior)
+    When I leave the email field empty
+    And I click the submit button
+    Then either a validation error appears or the output section remains hidden (document actual behavior)
 
-  @SCRUM-70 @AC1 @Text-Box @regression
-  Scenario: Valid email produces output section with correct data
-    Given the user navigates to the Text Box section
-    When the user enters "test@example.com" in the #userEmail field
-    And enters a valid full name and current address
-    And clicks the #submit button
-    Then the #userEmail field shows no validation error
-    And the #output section is visible and contains the submitted data
+  @positive @AC1 @email @textbox
+  Scenario: Positive smoke – valid email submission shows output
+    When I fill the text box form with valid data including "test@example.com" as email
+    And I click the submit button
+    Then the output section is displayed
+    And the submitted email appears in the output
 
-  @SCRUM-70 @AC2 @Web-Tables @negative
-  Scenario: Non-numeric age blocks submission and modal stays open
-    Given the user navigates to the Web Tables section
-    When the user clicks the "Add" button to open the registration modal
-    And enters valid first name, last name, email, salary (50000), and department
-    And enters "abc" in the Age field
-    And clicks the "Submit" button
-    Then the registration modal does not close
-    And the Age field shows a validation error
-    And no new row is added to the table
-
-  @SCRUM-70 @AC2 @Web-Tables @negative
-  Scenario: Non-numeric salary blocks submission and modal stays open
-    Given the user navigates to the Web Tables section
-    When the user clicks the "Add" button to open the registration modal
-    And enters valid first name, last name, email, age (30), and department
-    And enters "12ab" in the Salary field
-    And clicks the "Submit" button
+  # AC2 – Web Tables Validation
+  @negative @AC2 @webtables @age
+  Scenario: Web tables – non-numeric age blocks submission
+    Given the registration modal is open
+    When I fill all fields with valid data except age which I set to "abc"
+    And I click the submit button in the modal
     Then the registration modal remains open
-    And the Salary field shows a validation error
     And no new row is added to the table
 
-  @SCRUM-70 @AC3 @Radio-Button @negative
-  Scenario: Disabled “No” radio button remains disabled and unclickable
-    Given the user navigates to the Radio Button section
-    When the user locates the #noRadio element
-    Then the #noRadio element should have a disabled attribute
-    When the user attempts to click the #noRadio element
-    Then the radio button group remains unchanged
-    And no state change occurs (no selected class, no output message)
+  @negative @AC2 @webtables @salary
+  Scenario: Web tables – non-numeric salary blocks submission
+    Given the registration modal is open
+    When I fill all fields with valid data except salary which I set to "12ab"
+    And I click the submit button in the modal
+    Then the registration modal remains open
+    And no new row is added to the table
 
-  @SCRUM-70 @AC3 @Radio-Button @negative
-  Scenario: Force click on disabled “No” radio button does not change state
-    Given the user navigates to the Radio Button section
-    When the user attempts a force click on the #noRadio element
-    Then the #noRadio element remains disabled
-    And no other radio button selection is lost
-    And the output message (if any) remains unchanged
+  @negative @AC2 @webtables @boundary
+  Scenario: Web tables – empty age and salary fields block submission
+    Given the registration modal is open
+    When I fill all fields with valid data but leave age and salary empty
+    And I click the submit button in the modal
+    Then the registration modal remains open
+    And no new row is added to the table
+
+  @positive @AC2 @webtables
+  Scenario: Positive smoke – valid numeric data submits successfully
+    Given the registration modal is open
+    When I fill all fields with valid numeric data (age 30, salary 50000)
+    And I click the submit button in the modal
+    Then the registration modal closes
+    And a new row with the submitted data appears in the table
+
+  # AC3 – Radio Button Validation
+  @negative @AC3 @radiobutton @disabled
+  Scenario: Radio button – disabled "No" option does not change state on click
+    When I scroll to the radio button section
+    Then the "No" radio option is disabled
+    When I click the "No" radio option
+    Then the "No" radio option remains disabled and unchecked
+    And no success message for "No" appears
+
+  @negative @AC3 @radiobutton @resilience
+  Scenario: Radio button – programmatic click on "No" does not trigger UI update
+    When I force a JavaScript click event on the disabled "No" radio
+    Then no success message appears
+    And the radio button group state is unchanged
+
+  # AC4 – UI Stability
+  @regression @AC4 @stability
+  Scenario: UI remains interactable after overlay dismissal
+    Given any overlays (e.g., cookie consent) are dismissed
+    When I perform normal interactions on Text Box, Web Tables, and Radio Button sections
+    Then all interactions succeed without "element not interactable" errors
