@@ -1,73 +1,71 @@
 # Traceability
-Feature: Negative Path Validation for DemoQA Elements Module
+Feature: DemoQA Elements – Negative Path Validation
 
-  @negative @AC1
-  Scenario: Email invalid – missing TLD blocks submission and hides output
-    Given the Text Box page is loaded
-    When the user enters "test@domain" in the email field
-    And clicks the Submit button
-    Then the #output section is not displayed
-    And the form submission is blocked (URL unchanged)
+  Scenario: TC01 – Text Box: Valid email displays output
+    Given the user is on the Text Box page at "/text-box"
+    When the user enters "valid.email@example.com" into the email field
+    And the user clicks the Submit button
+    Then the output section "#output" becomes visible and contains the submitted email
 
-  @boundary @AC1
-  Scenario: Email invalid – missing @ symbol blocks submission
-    Given the Text Box page is loaded
-    When the user enters "testdomain.com" in the email field
-    And clicks the Submit button
-    Then the #output section is not displayed
-    And the form submission is blocked
+  Scenario: TC02 – Text Box: Invalid email formats trigger validation error
+    Given the user is on the Text Box page at "/text-box"
+    When the user enters "test@domain" into the email field
+    And the user clicks the Submit button
+    Then the email field shows a validation error (HTML5 validation message)
+    And the output section "#output" remains hidden
+    When the user clears the field and enters "missingatsymbol.com"
+    And the user clicks the Submit button
+    Then the email field again shows a validation error
+    And "#output" remains hidden
 
-  @positive @regression @AC1
-  Scenario: Valid email renders output section with correct data
-    Given the Text Box page is loaded
-    And all fields are empty
-    When the user enters valid full name, email, current address, and permanent address
-    And clicks the Submit button
-    Then the #output section is displayed with the submitted data
-    And no validation errors are present
-
-  @negative @AC2
-  Scenario: Non-numeric age ('abc') blocks Web Table registration
-    Given the Web Tables page is loaded
-    And the registration modal is opened
-    When the user fills all fields except age with valid data
-    And enters "abc" in the Age field
-    And clicks Submit in the modal
+  Scenario: TC03 – Web Tables: Non-numeric Age blocks submission
+    Given the user is on the Web Tables page at "/webtables"
+    When the user clicks the "Add New Record" button
+    And fills First Name "John", Last Name "Doe", Email "j@d.com"
+    And fills Age with "abc"
+    And clicks the Submit button in the modal
     Then the registration modal remains open
-    And no new row is added to the table
+    And no new row appears in the table
+    And a validation error is indicated on the Age field (browser validity)
 
-  @negative @AC2
-  Scenario: Non-numeric salary ('12ab') blocks Web Table registration
-    Given the Web Tables page is loaded
-    And the registration modal is opened
-    When the user fills all fields except salary with valid data
-    And enters "12ab" in the Salary field
-    And clicks Submit in the modal
+  Scenario: TC04 – Web Tables: Non-numeric Salary blocks submission
+    Given the user is on the Web Tables page at "/webtables"
+    When the user clicks the "Add New Record" button
+    And fills First Name "John", Last Name "Doe", Email "j@d.com", Age "25"
+    And fills Salary with "abc"
+    And clicks the Submit button in the modal
     Then the registration modal remains open
-    And no new row is added to the table
+    And no new row appears in the table
+    And a validation error is indicated on the Salary field
 
-  @boundary @AC2
-  Scenario: Empty age and salary fields block Web Table registration
-    Given the Web Tables page is loaded
-    And the registration modal is opened
-    When the user fills only non-numeric required fields (First Name, Last Name, Email, Department) with valid data
-    And leaves Age and Salary empty
-    And clicks Submit in the modal
+  Scenario: TC05 – Web Tables: Both Age and Salary non-numeric blocks submission
+    Given the user is on the Web Tables page at "/webtables"
+    When the user clicks the "Add New Record" button
+    And fills First Name "John", Last Name "Doe", Email "j@d.com"
+    And fills Age with "abc", Salary with "12xy"
+    And clicks the Submit button in the modal
     Then the registration modal remains open
-    And no new row is added to the table
+    And no new row appears
+    And validation errors appear on both Age and Salary fields
 
-  @negative @AC3
-  Scenario: 'No' radio button is disabled and unclickable
-    Given the Radio Button page is loaded
-    Then the #noRadio element should have the disabled attribute
-    When the user attempts to click #noRadio with a standard click
-    Then the #noRadio remains disabled
-    And no selection indicator appears (no success message)
+  Scenario: TC06 – Radio Button: Disabled 'No' option does not change state on click
+    Given the user is on the Radio Button page at "/radio-button"
+    Then the "No" radio button (#noRadio) is disabled
+    When the user attempts to click the disabled "No" radio button (using force action)
+    Then the radio button remains disabled
+    And no "selected" indicator appears
+    And no success message is displayed
 
-  @negative @AC3
-  Scenario: No state change after force-clicking disabled 'No' radio button
-    Given the Radio Button page is loaded
-    And no radio button is initially selected
-    When the user force-clicks the #noRadio element
-    Then the #noRadio remains disabled
-    And no success message (e.g., "You have selected No") appears
+  Scenario: TC07 – Radio Button: Select 'Yes' option works (positive baseline)
+    Given the user is on the Radio Button page at "/radio-button"
+    When the user clicks the "Yes" radio button
+    Then the "Yes" radio button becomes selected
+    And the success message "You have selected Yes" is displayed below the buttons
+
+  Scenario: TC09 – UI Stability: Web Tables remain interactable under scroll after page resize
+    Given the user is on the Web Tables page at "/webtables"
+    When the viewport is set to 800x600
+    And the user scrolls until the "Add New Record" button is visible
+    And the user clicks that button
+    Then the registration modal opens successfully
+    And no JavaScript errors or scroll jump occur

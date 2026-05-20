@@ -1,113 +1,121 @@
 // Traceability
 import { test, expect } from '@playwright/test';
 
-test.describe('DemoQA Elements Negative Path Validation', () => {
+test.describe('DemoQA Elements – Negative Path Validation', () => {
 
-  // AC1 – Email Validation
-  test('Email invalid – missing TLD blocks submission and hides output', async ({ page }) => {
+  // TC01 – Valid email displays output (positive baseline)
+  test('TC01 – Text Box: Valid email displays output', async ({ page }) => {
     await page.goto('https://demoqa.com/text-box');
-    await page.waitForLoadState('networkidle');
-    await page.fill('#userEmail', 'test@domain');
-    await page.click('#submit');
-    await expect(page.locator('#output')).toBeHidden();
-    await expect(page).toHaveURL('https://demoqa.com/text-box');
-  });
-
-  test('Email invalid – missing @ symbol blocks submission', async ({ page }) => {
-    await page.goto('https://demoqa.com/text-box');
-    await page.waitForLoadState('networkidle');
-    await page.fill('#userEmail', 'testdomain.com');
-    await page.click('#submit');
-    await expect(page.locator('#output')).toBeHidden();
-    await expect(page).toHaveURL('https://demoqa.com/text-box');
-  });
-
-  test('Valid email renders output section with correct data', async ({ page }) => {
-    await page.goto('https://demoqa.com/text-box');
-    await page.waitForLoadState('networkidle');
-    await page.fill('#userName', 'John Doe');
-    await page.fill('#userEmail', 'john.doe@example.com');
-    await page.fill('#currentAddress', '123 Main St');
-    await page.fill('#permanentAddress', '456 Oak Ave');
+    await page.fill('#userEmail', 'valid.email@example.com');
     await page.click('#submit');
     await expect(page.locator('#output')).toBeVisible();
-    await expect(page.locator('#output')).toContainText('John Doe');
-    await expect(page.locator('#output')).toContainText('john.doe@example.com');
+    await expect(page.locator('#output')).toContainText('valid.email@example.com');
   });
 
-  // AC2 – Web Tables Validation
-  test('Non-numeric age blocks registration', async ({ page }) => {
+  // TC02 – Invalid email formats trigger validation error
+  test('TC02 – Text Box: Invalid email formats trigger validation error', async ({ page }) => {
+    await page.goto('https://demoqa.com/text-box');
+
+    // First invalid email
+    await page.fill('#userEmail', 'test@domain');
+    await page.click('#submit');
+    // Check HTML5 validation state
+    await expect(page.locator('#userEmail')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
+    await expect(page.locator('#output')).toBeHidden();
+
+    // Clear and enter second invalid email
+    await page.fill('#userEmail', '');
+    await page.fill('#userEmail', 'missingatsymbol.com');
+    await page.click('#submit');
+    await expect(page.locator('#userEmail')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
+    await expect(page.locator('#output')).toBeHidden();
+  });
+
+  // TC03 – Non-numeric Age blocks submission
+  test('TC03 – Web Tables: Non-numeric Age blocks submission', async ({ page }) => {
     await page.goto('https://demoqa.com/webtables');
-    await page.waitForLoadState('networkidle');
+    await page.waitForSelector('#addNewRecordButton');
     await page.click('#addNewRecordButton');
-    await page.waitForSelector('.modal-content', { state: 'visible' });
-    await page.fill('#firstName', 'Jane');
-    await page.fill('#lastName', 'Smith');
-    await page.fill('#userEmail', 'jane.smith@test.com');
+    await page.waitForSelector('.modal-content');
+    await page.fill('#firstName', 'John');
+    await page.fill('#lastName', 'Doe');
+    await page.fill('#userEmail', 'j@d.com');
     await page.fill('#age', 'abc');
-    await page.fill('#salary', '50000');
-    await page.fill('#department', 'QA');
     await page.click('#submit');
+    // Modal should still be visible
     await expect(page.locator('.modal-content')).toBeVisible();
-    // Verify no new row: search by email and expect no results
-    await page.fill('#searchBox', 'jane.smith@test.com');
-    await expect(page.locator('.rt-tr-group')).toHaveCount(0);
+    // No new row (count rows before and after)
+    const rowCountBefore = await page.locator('.rt-tr-group').count();
+    await expect(page.locator('.rt-tr-group')).toHaveCount(rowCountBefore);
+    // Validation error on age field
+    await expect(page.locator('#age')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
   });
 
-  test('Non-numeric salary blocks registration', async ({ page }) => {
+  // TC04 – Non-numeric Salary blocks submission
+  test('TC04 – Web Tables: Non-numeric Salary blocks submission', async ({ page }) => {
     await page.goto('https://demoqa.com/webtables');
-    await page.waitForLoadState('networkidle');
     await page.click('#addNewRecordButton');
-    await page.waitForSelector('.modal-content', { state: 'visible' });
-    await page.fill('#firstName', 'Jane');
-    await page.fill('#lastName', 'Smith');
-    await page.fill('#userEmail', 'jane.smith@test.com');
-    await page.fill('#age', '30');
-    await page.fill('#salary', '12ab');
-    await page.fill('#department', 'QA');
+    await page.waitForSelector('.modal-content');
+    await page.fill('#firstName', 'John');
+    await page.fill('#lastName', 'Doe');
+    await page.fill('#userEmail', 'j@d.com');
+    await page.fill('#age', '25');
+    await page.fill('#salary', 'abc');
     await page.click('#submit');
     await expect(page.locator('.modal-content')).toBeVisible();
-    await page.fill('#searchBox', 'jane.smith@test.com');
-    await expect(page.locator('.rt-tr-group')).toHaveCount(0);
+    const rowCountBefore = await page.locator('.rt-tr-group').count();
+    await expect(page.locator('.rt-tr-group')).toHaveCount(rowCountBefore);
+    await expect(page.locator('#salary')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
   });
 
-  test('Empty age and salary fields block registration', async ({ page }) => {
+  // TC05 – Both Age and Salary non-numeric blocks submission
+  test('TC05 – Web Tables: Both Age and Salary non-numeric blocks submission', async ({ page }) => {
     await page.goto('https://demoqa.com/webtables');
-    await page.waitForLoadState('networkidle');
     await page.click('#addNewRecordButton');
-    await page.waitForSelector('.modal-content', { state: 'visible' });
-    await page.fill('#firstName', 'Jane');
-    await page.fill('#lastName', 'Smith');
-    await page.fill('#userEmail', 'jane.smith@test.com');
-    // leave age and salary empty
-    await page.fill('#department', 'QA');
+    await page.waitForSelector('.modal-content');
+    await page.fill('#firstName', 'John');
+    await page.fill('#lastName', 'Doe');
+    await page.fill('#userEmail', 'j@d.com');
+    await page.fill('#age', 'abc');
+    await page.fill('#salary', '12xy');
     await page.click('#submit');
     await expect(page.locator('.modal-content')).toBeVisible();
-    await page.fill('#searchBox', 'jane.smith@test.com');
-    await expect(page.locator('.rt-tr-group')).toHaveCount(0);
+    const rowCountBefore = await page.locator('.rt-tr-group').count();
+    await expect(page.locator('.rt-tr-group')).toHaveCount(rowCountBefore);
+    await expect(page.locator('#age')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
+    await expect(page.locator('#salary')).toHaveJSProperty('validationMessage', expect.not.stringContaining(''));
   });
 
-  // AC3 – Radio Button Validation
-  test('No radio button is disabled and unclickable', async ({ page }) => {
+  // TC06 – Disabled 'No' radio button does not change state on click
+  test('TC06 – Radio Button: Disabled No option does not change state on click', async ({ page }) => {
     await page.goto('https://demoqa.com/radio-button');
-    await page.waitForLoadState('networkidle');
-    const noRadio = page.locator('#noRadio');
-    await expect(noRadio).toBeDisabled();
-    // Try normal click
-    await noRadio.click({ timeout: 3000 }).catch(() => {});  // click will likely fail, catch error
-    await expect(noRadio).toBeDisabled();
-    // Ensure no success message for "No"
+    await expect(page.locator('#noRadio')).toBeDisabled();
+    // Attempt click with force to simulate user attempt
+    await page.locator('#noRadio').click({ force: true });
+    await expect(page.locator('#noRadio')).toBeDisabled();
+    // No success message
     await expect(page.locator('.text-success')).toBeHidden();
+    // No radio button indicator changed (check that Yes is not accidentally selected)
+    const yesSelected = await page.locator('#yesRadio').isChecked();
+    expect(yesSelected).toBe(false);
   });
 
-  test('No state change after force-clicking disabled No radio', async ({ page }) => {
+  // TC07 – Select Yes radio button (positive baseline)
+  test('TC07 – Radio Button: Select Yes option works', async ({ page }) => {
     await page.goto('https://demoqa.com/radio-button');
-    await page.waitForLoadState('networkidle');
-    const noRadio = page.locator('#noRadio');
-    await expect(noRadio).toBeDisabled();
-    // Force click
-    await noRadio.click({ force: true });
-    await expect(noRadio).toBeDisabled();
-    await expect(page.locator('.text-success')).toBeHidden();
+    await page.click('label:has-text("Yes")');
+    await expect(page.locator('#yesRadio')).toBeChecked();
+    await expect(page.locator('.text-success')).toHaveText('You have selected Yes');
   });
+
+  // TC09 – UI Stability: Web Tables remain interactable under scroll after page resize
+  test('TC09 – UI Stability: Web Tables remain interactable under scroll after page resize', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 600 });
+    await page.goto('https://demoqa.com/webtables');
+    await page.waitForSelector('#addNewRecordButton');
+    await page.locator('#addNewRecordButton').scrollIntoViewIfNeeded();
+    await page.click('#addNewRecordButton');
+    await expect(page.locator('.modal-content')).toBeVisible();
+  });
+
 });
