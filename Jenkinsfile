@@ -111,7 +111,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'playwright-report/**, test-results/**, tests/generated/**, tests/gherkin/**, tests/testcases/**, src/test/java/generated/**, target/surefire-reports/**', allowEmptyArchive: true
+      archiveArtifacts artifacts: 'playwright-report/**, test-results/**, tests/generated/**, tests/gherkin/**, tests/testcases/**, src/test/java/generated/**, target/surefire-reports/**, target/selenium-evidence/**, artifacts/api-evidence/**', allowEmptyArchive: true
       junit testResults: 'test-results/junit.xml, target/surefire-reports/*.xml', allowEmptyResults: true
       script {
         if ((env.PLAYWRIGHT_EXIT ?: '0') != '0' && fileExists('test-results/junit.xml')) {
