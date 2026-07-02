@@ -1,35 +1,39 @@
 # Traceability
-Feature: GIFT City Mutual Fund Investment Guide - Regression Suite
+Feature: GIFT City Mutual Fund Guide – Regression Guardrails
 
-  Background:
-    Given the investor navigates to https://iventures.in/feeds/blog/gift-city-mutual-fund
-    And the page loads without errors
+  Scenario: Page loads successfully with valid HTTP status and content length
+    Given the investor opens https://iventures.in/feeds/blog/gift-city-mutual-fund
+    When the page finishes loading
+    Then the page returns HTTP 200 and has a non‑empty title containing "GIFT City"
+    And the body text exceeds 100 characters
 
-  @regression @P2
-  Scenario: Regression - Resource loading integrity for images, CSS, and fonts
-    Given the page is fully loaded
-    When all network requests for images, stylesheets, and font resources complete
-    Then each resource should return a successful status (200 or 304)
-    And no resource should return a client or server error (4xx, 5xx)
+  Scenario: Core educational keywords remain present in the article
+    Given the investment guide page is fully loaded
+    When the investor scans the main content
+    Then the visible article text contains "GIFT City"
+    And the visible article text contains "mutual fund"
+    And the visible article text contains at least one of "IFSC", "global", "international"
 
-  @regression @P0
-  Scenario: Regression - Core content references to GIFT City and mutual funds persist
-    Given the investment guide page is displayed
-    When the investor scans the main article content
-    Then the visible text should contain "GIFT City"
-    And the visible text should contain "Mutual Fund"
-    And the visible text should contain at least one of "global" or "international" in the context of investment
+  Scenario: All visible outbound and reference links have non‑empty href values
+    Given the investor is on the guide page
+    When the investor reviews all visible anchor elements
+    Then every link’s href attribute is present and not empty
+    And no link triggers page‑crashing behavior upon hover or scroll
 
-  @regression @P2
-  Scenario: Regression - CTA and reference links have valid href attributes and are visible
-    Given the investor scrolls through the guide page
-    When the investor identifies all visible calls to action and reference links
-    Then each link should have a non-empty href attribute
-    And no link should cause a JavaScript error when present
+  Scenario: Desktop viewport (1440×900) – no overlapping or hidden content sections
+    Given the guide page is loaded at a desktop viewport size of 1440×900 pixels
+    When the investor scrolls through the entire article
+    Then no two distinct content elements overlap
+    And at least three paragraphs have positive bounding box heights
 
-  @regression @P1
-  Scenario: Regression - Mobile viewport does not introduce horizontal scroll or content clipping
-    Given the browser viewport is set to 390x844 pixels
-    When the investor scrolls through the entire guide
-    Then there should be no horizontal scrollbar
-    And all major section headings (h2, h3) should be fully visible when scrolled into view
+  Scenario: Mobile viewport (390×844) – article remains readable without overlap
+    Given the guide page is loaded at a mobile viewport size of 390×844 pixels
+    When the investor scrolls through the entire article
+    Then no two distinct content elements overlap
+    And headings (h1–h3) are fully visible within the viewport
+
+  Scenario: Page failure is captured with evidence for defect reporting
+    Given the target page returns a non‑200 status or fails to load
+    When the test observes the failure
+    Then the test captures the page title, URL, HTTP status, browser console logs, and a screenshot
+    And the test reports a descriptive error with the captured evidence

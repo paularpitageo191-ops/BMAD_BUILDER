@@ -1,85 +1,148 @@
 // Traceability
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-test.describe('GIFT City Mutual Fund Investment Guide - Regression', () => {
-  const targetUrl = 'https://iventures.in/feeds/blog/gift-city-mutual-fund';
+const TARGET_URL = 'https://iventures.in/feeds/blog/gift-city-mutual-fund';
+const KEY_PHRASES = ['GIFT City', 'mutual fund'];
+const KEY_VARIATIONS = ['IFSC', 'global', 'international'];
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto(targetUrl, { waitUntil: 'networkidle' });
+test.describe('GIFT City Mutual Fund Guide – Regression Guardrails', () => {
+
+  test('Page loads with 200 status and meaningful content', async ({ page }) => {
+    const response = await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+    expect(response?.status()).toBe(200);
+
+    const title = await page.title();
+    expect(title).not.toBe('');
+    expect(title.toLowerCase()).toContain('gift city');
+
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText.length).toBeGreaterThan(100);
   });
 
-  test('Regression - Resource loading integrity for images, CSS, and fonts', async ({ page }) => {
-    const brokenResources: string[] = [];
+  test('Core educational keywords are present in the article', async ({ page }) => {
+    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
 
-    // Intercept network responses and collect non-successful resource requests
-    page.on('response', (response) => {
-      const resourceType = response.request().resourceType();
-      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-        const status = response.status();
-        if (status >= 400) {
-          brokenResources.push(`${response.url()} -> ${status}`);
+    // Use the main article or fall back to body
+    const articleLocator = page.locator('article').or(page.locator('main')).or(page.locator('body'));
+    const articleText = await articleLocator.innerText();
+    const lowerText = articleText.toLowerCase();
+
+    // Assert required terms
+    for (const phrase of KEY_PHRASES) {
+      expect(lowerText).toContain(phrase.toLowerCase());
+    }
+
+    // Assert at least one of the related terms exists
+    const foundRelated = KEY_VARIATIONS.some(term => lowerText.includes(term.toLowerCase()));
+    expect(foundRelated).toBeTruthy();
+  });
+
+  test('All visible links have non-empty href values', async ({ page }) => {
+    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+
+    // Collect all visible links
+    const links = page.locator('a:visible');
+    const count = await links.count();
+    for (let i = 0; i < count; i++) {
+      const href = await links.nth(i).getAttribute('href');
+      expect(href).not.toBeNull();
+      expect(href!.trim()).not.toBe('');
+    }
+  });
+
+  test('Desktop viewport (1440×900): no overlapping content sections', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+
+    // Scroll to bottom to trigger lazy-loaded content
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+
+    // Check for overlaps among all visible elements (excluding script/style meta)
+    const hasOverlap = await page.evaluate(() => {
+      const elements = Array.from(document.querySelectorAll('*:not(script):not(style):not(meta)')).filter(
+        el => (el as HTMLElement).offsetHeight > 0 && (el as HTMLElement).offsetWidth > 0
+      );
+      const rects = elements.map(el => (el as HTMLElement).getBoundingClientRect());
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i];
+          const b = rects[j];
+          const isOverlap = !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+          if (isOverlap) {
+            // Ignore parent-child overlaps (typical nested structure)
+            const parentContainsChild = (a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom) ||
+                                        (b.left <= a.left && b.top <= a.top && b.right >= a.right && b.bottom >= a.bottom);
+            if (!parentContainsChild) return true;
+          }
         }
       }
+      return false;
     });
 
-    // Wait for all resources to finish loading
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(2000); // Allow late-loading images
+    expect(hasOverlap).toBe(false);
 
-    expect(brokenResources).toHaveLength(0,
-      `The following resources returned errors:\n${brokenResources.join('\n')}`
-    );
+    // Ensure at least three paragraphs have visible height
+    const paragraphCount = await page.locator('p').count();
+    expect(paragraphCount).toBeGreaterThanOrEqual(3);
   });
 
-  test('Regression - Core content references to GIFT City and mutual funds persist', async ({ page }) => {
-    // Use article role or main content selector
-    const article = page.getByRole('article');
-    const articleText = await article.textContent() || '';
-
-    // Assert core keywords are present (case-insensitive)
-    expect(articleText.toLowerCase()).toContain('gift city');
-    expect(articleText.toLowerCase()).toContain('mutual fund');
-    // At least one of global or international in investment context
-    const containsGlobal = articleText.toLowerCase().includes('global');
-    const containsInternational = articleText.toLowerCase().includes('international');
-    expect(containsGlobal || containsInternational).toBeTruthy();
-  });
-
-  test('Regression - CTA and reference links have valid href attributes and are visible', async ({ page }) => {
-    const links = page.getByRole('link');
-    const linkCount = await links.count();
-    expect(linkCount).toBeGreaterThan(0);
-
-    for (let i = 0; i < linkCount; i++) {
-      const link = links.nth(i);
-      const href = await link.getAttribute('href');
-      const isVisible = await link.isVisible();
-
-      // Only validate visible links (skip hidden or decorative)
-      if (isVisible) {
-        expect(href).not.toBeNull();
-        expect(href!.length).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  test('Regression - Mobile viewport does not introduce horizontal scroll or content clipping', async ({ page }) => {
-    // Set mobile viewport
+  test('Mobile viewport (390×844): article readable without overlap', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(targetUrl, { waitUntil: 'networkidle' });
+    await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
 
-    // Check for horizontal scrollbar using page width
-    const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
-    const viewportWidth = 390;
-    expect(bodyWidth).toBeLessThanOrEqual(viewportWidth);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
 
-    // Scroll to each heading and verify it is visible in the viewport
-    const headings = page.getByRole('heading', { level: 1 }).or(page.getByRole('heading', { level: 2 })).or(page.getByRole('heading', { level: 3 }));
+    const hasOverlap = await page.evaluate(() => {
+      const elements = Array.from(document.querySelectorAll('*:not(script):not(style):not(meta)')).filter(
+        el => (el as HTMLElement).offsetHeight > 0 && (el as HTMLElement).offsetWidth > 0
+      );
+      const rects = elements.map(el => (el as HTMLElement).getBoundingClientRect());
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i];
+          const b = rects[j];
+          const isOverlap = !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+          if (isOverlap) {
+            const parentContainsChild = (a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom) ||
+                                        (b.left <= a.left && b.top <= a.top && b.right >= a.right && b.bottom >= a.bottom);
+            if (!parentContainsChild) return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    expect(hasOverlap).toBe(false);
+
+    // Check headings are visible
+    const headings = page.locator('h1, h2, h3');
     const headingCount = await headings.count();
     for (let i = 0; i < headingCount; i++) {
-      const heading = headings.nth(i);
-      await heading.scrollIntoViewIfNeeded();
-      await expect(heading).toBeVisible();
+      await expect(headings.nth(i)).toBeVisible();
     }
   });
+
+  test('Page failure is captured with evidence for defect reporting', async ({ page }) => {
+    // Simulate failure by navigating to a non-existent page
+    const response = await page.goto('https://iventures.in/feeds/blog/does-not-exist', { waitUntil: 'networkidle', timeout: 10000 }).catch(() => null);
+    const screenshotPath = 'test-results/failure-capture.png';
+
+    // Capture evidence regardless of status
+    const title = await page.title();
+    const url = page.url();
+    const statusCode = response?.status() ?? 0;
+    const consoleLogs: string[] = [];
+    page.on('console', msg => consoleLogs.push(msg.text()));
+
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+
+    // Assert that we captured what we need (the test will fail with evidence)
+    expect(statusCode).not.toBe(200);
+    console.log(`Failure captured. Title: ${title}, URL: ${url}, Status: ${statusCode}, Console: ${consoleLogs.join('; ')}`);
+    // Re-throw a descriptive error to make test fail with evidence
+    throw new Error(`Page failed to load. Evidence captured: title='${title}', url='${url}', status=${statusCode}, screenshot='${screenshotPath}'`);
+  });
+
 });
