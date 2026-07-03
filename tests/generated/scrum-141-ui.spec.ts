@@ -1,182 +1,154 @@
 // Traceability
-import { test, expect, Page, TestInfo } from '@playwright/test';
-import path from 'path';
+import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'https://iventures.in/feeds/blog/gift-city-mutual-fund';
 
-test.describe('GIFT City Mutual Fund Investment Guide Demo', () => {
-  // Helper: assert visible text contains any of the given strings (case-insensitive)
-  async function assertVisibleTextContains(page: Page, keywords: string[]) {
-    const bodyText = (await page.locator('body').innerText()).toLowerCase();
-    for (const kw of keywords) {
-      if (bodyText.includes(kw.toLowerCase())) return;
-    }
-    throw new Error(`None of the keywords ${keywords.join(', ')} found in visible page text`);
-  }
+test.describe('GIFT City Mutual Fund Investment Guide', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
 
-  test('TC01: Page loads successfully without errors', async ({ page }) => {
+  test('AC1 - Page loads successfully without errors', async ({ page }) => {
     const response = await page.goto(BASE_URL, { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
-    const title = await page.title();
-    expect(title).not.toBe('');
-    expect(title.toLowerCase()).toContain('gift city');
-    const bodyLen = (await page.locator('body').innerText()).length;
-    expect(bodyLen).toBeGreaterThan(100);
-    // capture console errors for verification (optional)
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        test.info().annotations.push({ type: 'console_error', description: msg.text() });
+    await expect(page).toHaveTitle(/GIFT City Mutual Fund/);
+    // Check no visible browser error
+    const errorAlert = page.locator('.browser-error, [class*="error"]');
+    await expect(errorAlert).toHaveCount(0);
+  });
+
+  test('AC2 - Core GIFT City mutual fund content is visible', async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    await expect(page.getByText('GIFT City', { exact: false })).toBeVisible();
+    await expect(page.getByText('mutual fund', { exact: false })).toBeVisible();
+    const globalKeywords = ['international', 'global', 'worldwide'];
+    let foundGlobal = false;
+    for (const keyword of globalKeywords) {
+      const el = page.getByText(keyword, { exact: false });
+      if (await el.count() > 0) {
+        foundGlobal = true;
+        break;
       }
-    });
+    }
+    expect(foundGlobal).toBe(true);
   });
 
-  test('TC02: Guide contains visible references to GIFT City and mutual funds', async ({ page }) => {
+  test('AC3 - NSE IFSC / global securities context is discoverable', async ({ page }) => {
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    await page.waitForLoadState('networkidle');
-    const articleText = (await page.locator('article, main, body').first().innerText()).toLowerCase();
-    expect(articleText).toContain('gift city');
-    expect(articleText).toMatch(/mutual fund(s)?/i);
-    // global/international exposure concept
-    const globalRefs = ['global', 'international', 'cross-border', 'foreign'];
-    const foundGlobal = globalRefs.some(term => articleText.includes(term));
-    expect(foundGlobal).toBeTruthy();
+    const bodyText = await page.locator('article, main').textContent() || page.locator('body').textContent() || '';
+    const hasIFSC = /NSE IFSC|IFSC/i.test(bodyText);
+    expect(hasIFSC).toBe(true);
+    const hasGlobalSecurities = /global securities|global investments|international securities/i.test(bodyText);
+    expect(hasGlobalSecurities).toBe(true);
   });
 
-  test('TC03: NSE IFSC / global securities context is discoverable', async ({ page }) => {
-    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    await page.waitForLoadState('networkidle');
-    const bodyText = (await page.locator('body').innerText()).toLowerCase();
-    const keywords = ['nse ifsc', 'ifsc', 'global securities', 'sez'];
-    const found = keywords.some(kw => bodyText.includes(kw));
-    expect(found).toBeTruthy();
-  });
-
-  test('TC04: Desktop viewport (1440x900) – article content is readable', async ({ page }) => {
+  test('AC4 - Desktop viewport readability', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    // scroll to bottom to trigger lazy loading
+    // Scroll to bottom to trigger layout
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(500);
-
-    // Check no overlapping elements from different sections (simplified: ensure at least 3 paragraphs have height > 0)
-    const paragraphs = page.locator('p');
-    const count = await paragraphs.count();
-    let visibleHeightCount = 0;
-    for (let i = 0; i < count; i++) {
-      const box = await paragraphs.nth(i).boundingBox();
-      if (box && box.height > 0) visibleHeightCount++;
-    }
-    expect(visibleHeightCount).toBeGreaterThanOrEqual(3);
-
-    // Headings visible
-    const headings = page.locator('h1, h2, h3');
-    await expect(headings.first()).toBeVisible();
+    await page.waitForTimeout(500); // allow lazy images to settle
+    // Check for overlapping by ensuring no element has negative clip or hidden overflow
+    const overlapCheck = await page.evaluate(() => {
+      const all = document.querySelectorAll('h1, h2, h3, p, img, a');
+      for (const el of all) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        // Check if any part is outside viewport horizontally
+        if (rect.right > window.innerWidth || rect.left < 0) return false;
+      }
+      return true;
+    });
+    expect(overlapCheck).toBe(true);
+    // Check no horizontal scrollbar
+    const hasHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(hasHorizontalScroll).toBe(false);
   });
 
-  test('TC05: Mobile viewport (390x844) – article content is readable without horizontal scroll', async ({ page }) => {
+  test('AC4 - Mobile viewport readability', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    // Check no horizontal overflow
-    const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
-    expect(bodyWidth).toBeLessThanOrEqual(390);
-
-    // Verify visible content: at least 2 headings and 3 paragraphs with height > 0
-    const headings = page.locator('h1, h2, h3');
-    let visibleHeadings = 0;
-    let visibleParagraphs = 0;
-    for (let i = 0; i < await headings.count(); i++) {
-      const box = await headings.nth(i).boundingBox();
-      if (box && box.height > 0) visibleHeadings++;
-    }
-    const paragraphs = page.locator('p');
-    for (let i = 0; i < await paragraphs.count(); i++) {
-      const box = await paragraphs.nth(i).boundingBox();
-      if (box && box.height > 0) visibleParagraphs++;
-    }
-    expect(visibleHeadings).toBeGreaterThanOrEqual(2);
-    expect(visibleParagraphs).toBeGreaterThanOrEqual(3);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
+    const hasHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(hasHorizontalScroll).toBe(false);
+    // Check no overlapping text
+    const noOverlap = await page.evaluate(() => {
+      const texts = document.querySelectorAll('p, h1, h2, h3, li');
+      for (const t of texts) {
+        const rect = t.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        // Check if text is partially outside viewport (exception for overflow hidden)
+        if (rect.right > window.innerWidth + 2 || rect.left < -2) return false;
+      }
+      return true;
+    });
+    expect(noOverlap).toBe(true);
   });
 
-  test('TC06: CTA and reference links have valid href values', async ({ page }) => {
+  test('AC5 - CTA / reference links are visible and have valid href', async ({ page }) => {
     await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-    const links = page.locator('a:visible');
-    const linkCount = await links.count();
-    const invalidHrefs: string[] = [];
-    for (let i = 0; i < linkCount; i++) {
-      const href = await links.nth(i).getAttribute('href');
-      if (!href || href === '#' || href.startsWith('javascript:void')) {
-        invalidHrefs.push(href || '(empty)');
-      }
+    const links = await page.locator('article a, main a').all();
+    for (const link of links) {
+      const href = await link.getAttribute('href');
+      expect(href).not.toBeNull();
+      expect(href).not.toBe('');
+      expect(href).not.toBe('#');
+      expect(href).not.toBe('javascript:void(0)');
+      await expect(link).toBeVisible();
     }
-    expect(invalidHrefs).toEqual([]);
-
-    // Sample 2–3 external links: click and verify no crash (open in new tab)
-    let sampled = 0;
-    for (let i = 0; i < linkCount && sampled < 3; i++) {
-      const href = await links.nth(i).getAttribute('href');
-      if (href && (href.startsWith('http') || href.startsWith('https'))) {
-        // Click and wait for navigation (allow timeout)
-        const [newPage] = await Promise.all([
-          page.waitForEvent('popup', { timeout: 5000 }).catch(() => null),
-          links.nth(i).click(),
-        ]);
-        if (newPage) await newPage.close();
-        sampled++;
-      }
-    }
-  });
-
-  test('TC07: Graceful evidence capture when page content is unavailable', async ({ page }, testInfo) => {
-    // Intercept the guide URL to simulate a blocked/failed response
-    await page.route(BASE_URL, route => {
-      route.abort('aborted');
-    });
-
-    let navigationError: Error | null = null;
-    try {
-      await page.goto(BASE_URL, { timeout: 10000 });
-    } catch (e) {
-      navigationError = e as Error;
-    }
-
-    // Capture evidence
-    const evidence = {
-      pageTitle: await page.title().catch(() => 'N/A'),
-      url: page.url(),
-      status: navigationError ? 'blocked' : 'success',
-      screenshotPath: '',
-    };
-
-    // Take screenshot
-    const screenshotPath = path.join(testInfo.outputDir, 'failure-capture.png');
-    await page.screenshot({ path: screenshotPath }).catch(() => {});
-    evidence.screenshotPath = screenshotPath;
-
-    // Attach evidence to test info
-    testInfo.attachments.push({
-      name: 'failure-evidence',
-      contentType: 'application/json',
-      body: JSON.stringify(evidence),
-    });
-
-    // Test should not crash; we expect navigation to fail
-    expect(navigationError).toBeDefined();
-  });
-
-  test('TC08: URL variants (trailing slash, uppercase) resolve to same content', async ({ page }) => {
-    const variants = [
-      'https://iventures.in/feeds/blog/gift-city-mutual-fund/',
-      'https://iventures.in/feeds/blog/gift-city-mutual-fund', // without slash – already canonical
-      'https://iventures.in/feeds/blog/GIFT-CITY-mutual-fund',
-    ];
-
-    const expectedTitle = 'GIFT City'; // partial, case-insensitive
-
-    for (const url of variants) {
-      const response = await page.goto(url, { waitUntil: 'networkidle' });
-      expect(response?.status()).toBeLessThan(400);
+    // Click the first visible link that is internal (not external) to avoid navigation risks
+    const internalLink = page.locator('article a[href^="/"], main a[href^="/"]').first();
+    if (await internalLink.count() > 0) {
+      await internalLink.click();
+      // Wait briefly to ensure no crash
+      await page.waitForTimeout(1000);
       const title = await page.title();
-      expect(title.toLowerCase()).toContain(expectedTitle.toLowerCase());
+      expect(title).toBeTruthy();
     }
+  });
+
+  test('AC6 - Graceful evidence capture when content is unavailable (route interception)', async ({ page }) => {
+    // Simulate a 404 on the main content
+    await page.route(BASE_URL, route => {
+      route.fulfill({ status: 404, body: '<html><title>Not Found</title><body>Not Found</body></html>' });
+    });
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    const title = await page.title();
+    expect(title).not.toBeNull();
+    const url = page.url();
+    expect(url).toBe(BASE_URL);
+    // Take screenshot (file saved by Playwright test runner, but we just verify no exception)
+    await page.screenshot({ path: 'test-results/ac6-unavailable.png' });
+    // Assert failure condition (test would fail at expect)
+    await expect(page.locator('body')).toContainText('Not Found');
+  });
+
+  test('AC6 - Page returns 404 when resource missing (broken URL)', async ({ page }) => {
+    const brokenUrl = 'https://iventures.in/feeds/blog/gift-city-mutual-fund-broken';
+    const response = await page.goto(brokenUrl, { waitUntil: 'networkidle' });
+    const status = response?.status() || 0;
+    expect(status === 404 || status >= 500).toBeTruthy();
+    await page.screenshot({ path: 'test-results/ac6-broken-url.png' });
+    const title = await page.title();
+    expect(title).toBeTruthy();
+  });
+
+  test('Regression - Expected content sections present (heading, date, author)', async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: 'networkidle' });
+    // Check H1
+    const h1 = page.getByRole('heading', { level: 1 });
+    await expect(h1).toBeVisible();
+    const h1Text = await h1.textContent();
+    expect(h1Text?.trim().length).toBeGreaterThan(0);
+    // Check date reference (e.g., "January 5, 2025" pattern)
+    const datePattern = /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}\b/;
+    const bodyText = await page.locator('article, main').textContent() || '';
+    expect(bodyText).toMatch(datePattern);
+    // Check author byline (try common patterns: "By Name" or <span> with author class)
+    const authorElement = page.locator('.author, .byline, [class*="author"]');
+    await expect(authorElement).toBeVisible();
+    const authorText = await authorElement.textContent();
+    expect(authorText?.trim().length).toBeGreaterThan(0);
   });
 });
