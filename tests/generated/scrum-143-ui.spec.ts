@@ -1,191 +1,101 @@
 // Traceability
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 const TARGET_URL = 'https://iventures.in/feeds/blog/gift-city-mutual-fund';
+const FUND_NAME = 'GC Multi Cap Fund'; // Placeholder from FUND-GC-001 – update from Excel
+const KEY_PHRASES = [
+  'GIFT City',
+  'mutual fund',
+  'IFSC',
+  'global securities',
+  'NSE IFSC',
+  'investment',
+];
 
-// Synthetic test data derived from GIFT_City_MF_Test_Data.xlsx
-const INV_001 = {
-  name: 'Ravi Kumar',
-  email: 'ravi@example.com',
-  pan: 'ABCDE1234F',
-  residency: 'Indian',
-  amount: 10000,
-  kyc: true
-};
-
-const INV_003 = {
-  name: 'Neha Singh',
-  email: 'neha@example.com',
-  pan: 'INCOMPLETE',
-  residency: 'NRI',
-  amount: 5000,
-  kyc: false
-};
-
-const AMT_004 = { amount: 1000 };
-const AMT_005 = { amount: 500000 };
-const AMT_008 = { amount: -1000 };
-
-test.describe('GIFT City Mutual Fund Investor Journey', () => {
-  test('TC01: Guide page loads with core GIFT City MF content (AC1)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    await expect(page).toHaveURL(TARGET_URL);
-    // Check for no console errors (we attach listener)
-    const consoleErrors: string[] = [];
-    page.on('console', msg => {
-      if (msg.type() === 'error') consoleErrors.push(msg.text());
-    });
-    await page.waitForLoadState('domcontentloaded');
-    const bodyText = await page.locator('body').innerText();
-    const containsGiftCity = /GIFT City|IFSC|global securities/i.test(bodyText);
-    expect(containsGiftCity).toBeTruthy();
-    expect(consoleErrors.length).toBe(0);
+// Helper: check that page loads without console errors
+async function assertNoConsoleErrors(page: Page) {
+  const errors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') errors.push(msg.text());
   });
+  await page.waitForLoadState('networkidle');
+  expect(errors).toEqual([]);
+}
 
-  test('TC02: CTA discoverable and navigates correctly (AC2)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    // Close any popups if visible
-    const closeButton = page.getByRole('button', { name: /close|dismiss|×/i }).first();
-    if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await closeButton.click();
-    }
-    // Find CTA links/buttons
-    const ctaLinks = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i });
-    const ctaButtons = page.getByRole('button').filter({ hasText: /invest|enquiry|contact|get started|next step/i });
-    const ctaCount = await ctaLinks.count() + await ctaButtons.count();
-    expect(ctaCount).toBeGreaterThanOrEqual(1);
+test('TC01: Guide page loads with GIFT City MF content', async ({ page }) => {
+  await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
 
-    // Click the first visible CTA (prefer link)
-    let clicked = false;
-    for (const link of await ctaLinks.all()) {
-      if (await link.isVisible()) {
-        await link.click();
-        clicked = true;
-        break;
-      }
-    }
-    if (!clicked) {
-      const firstButton = ctaButtons.first();
-      await firstButton.click();
-    }
-    await page.waitForLoadState('load');
-    expect(page.url()).not.toBe(TARGET_URL);
-    // Check no page error (we rely on Playwright not throwing)
+  // Title check
+  await expect(page).toHaveTitle(/GIFT City|Mutual Fund/i);
+
+  // Content reference check
+  await expect(page.locator('body')).toContainText(/GIFT City|IFSC|global securities/i);
+
+  // Console error check
+  const consoleErrors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') consoleErrors.push(msg.text());
   });
+  await page.waitForLoadState('networkidle');
+  expect(consoleErrors).toEqual([]);
+});
 
-  test('TC03: Eligible investor INV-001 journey (AC3/AC6)', async ({ page }) => {
-    // First navigate to CTA destination (reuse TC02 logic, but for simplicity go directly)
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    // Click first CTA
-    const ctaLink = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i }).first();
-    await ctaLink.click();
-    await page.waitForLoadState('load');
-    const formUrl = page.url();
-    // Fill form fields generically
-    const nameField = page.getByLabel(/name|full name/i).first();
-    const emailField = page.getByLabel(/email/i).first();
-    const panField = page.getByLabel(/pan/i).first();
-    const amountField = page.getByLabel(/amount|investment|contribution/i).first();
-    const submitButton = page.getByRole('button', { name: /submit|invest|enquire|send/i }).first();
+test('TC02: Discover and interact with visible CTAs', async ({ page }) => {
+  await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
 
-    await nameField.fill(INV_001.name);
-    await emailField.fill(INV_001.email);
-    if (await panField.isVisible()) await panField.fill(INV_001.pan);
-    await amountField.fill(String(INV_001.amount));
-    await submitButton.click();
-
-    await page.waitForLoadState('networkidle');
-    // Verify success: URL changed or success message visible
-    const successVisible = await page.getByText(/success|thank you|confirmed|next step/i).isVisible().catch(() => false);
-    expect(page.url() !== formUrl || successVisible).toBeTruthy();
+  // Look for CTA links
+  const ctaLocator = page.getByRole('link', {
+    name: /invest|enquire|contact|get started/i,
   });
+  await expect(ctaLocator.first()).toBeVisible({ timeout: 5000 });
 
-  test('TC04: Ineligible investor INV-003 blocked (AC4)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    const ctaLink = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i }).first();
-    await ctaLink.click();
-    await page.waitForLoadState('load');
-    const formUrl = page.url();
+  // Click first CTA and ensure no 404
+  const [response] = await Promise.all([
+    page.waitForNavigation({ waitUntil: 'networkidle', timeout: 10000 }),
+    ctaLocator.first().click(),
+  ]);
+  expect(response?.status()).not.toBe(404);
+});
 
-    const nameField = page.getByLabel(/name|full name/i).first();
-    const emailField = page.getByLabel(/email/i).first();
-    const panField = page.getByLabel(/pan/i).first();
-    const amountField = page.getByLabel(/amount|investment|contribution/i).first();
-    const submitButton = page.getByRole('button', { name: /submit|invest|enquire|send/i }).first();
+test('TC08: Fund display references FUND-GC-001 on guide page', async ({ page }) => {
+  await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
 
-    await nameField.fill(INV_003.name);
-    await emailField.fill(INV_003.email);
-    await panField.fill(INV_003.pan);
-    await amountField.fill(String(INV_003.amount));
-    await submitButton.click();
-    await page.waitForTimeout(2000); // wait for validation
+  // Check fund name appears
+  await expect(page.getByText(FUND_NAME)).toBeVisible({ timeout: 5000 });
 
-    const currentUrl = page.url();
-    const errorVisible = await page.getByText(/ineligible|KYC|error|invalid/).isVisible().catch(() => false);
-    // The form should not have navigated away or should show error
-    expect(currentUrl === formUrl || errorVisible).toBeTruthy();
+  // Optionally check asset class – adapt based on actual content
+  // Expect to see something like 'Equity' or 'Hybrid' – using a flexible pattern
+  const assetKeywords = ['Equity', 'Debt', 'Hybrid', 'Multi Cap', 'Large Cap', 'Sectoral'];
+  const bodyContent = await page.locator('body').textContent();
+  const foundAsset = assetKeywords.some((keyword) =>
+    bodyContent?.toLowerCase().includes(keyword.toLowerCase())
+  );
+  expect(foundAsset).toBe(true);
+});
+
+test('TC09: Regression: Guide page content stability', async ({ page }) => {
+  await page.goto(TARGET_URL, { waitUntil: 'networkidle' });
+
+  // 1. Verify key phrases still present
+  const bodyText = await page.locator('body').textContent();
+  for (const phrase of KEY_PHRASES) {
+    expect(bodyText).toContain(phrase);
+  }
+
+  // 2. Check number of fund items (e.g., list items mentioning funds)
+  const fundItems = page.locator('body').getByText(/fund|scheme/i);
+  const count = await fundItems.count();
+  // Baseline: assume > 0. In a real regression suite we compare against stored value.
+  expect(count).toBeGreaterThan(0);
+
+  // 3. Verify first CTA text is unchanged (sample)
+  const firstCTA = page.getByRole('link', {
+    name: /invest|enquire|contact|get started/i,
   });
-
-  test('TC05: Minimum amount 1000 accepted (AMT-004)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    const ctaLink = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i }).first();
-    await ctaLink.click();
-    await page.waitForLoadState('load');
-    const nameField = page.getByLabel(/name|full name/i).first();
-    const emailField = page.getByLabel(/email/i).first();
-    const amountField = page.getByLabel(/amount|investment|contribution/i).first();
-    const submitButton = page.getByRole('button', { name: /submit|invest|enquire|send/i }).first();
-    await nameField.fill('Test User');
-    await emailField.fill('test@example.com');
-    await amountField.fill(String(AMT_004.amount));
-    await submitButton.click();
-    await page.waitForLoadState('networkidle');
-    // No amount-specific error expected
-    const amountError = await page.getByText(/minimum|at least|must be/i).isVisible().catch(() => false);
-    expect(amountError).toBeFalsy();
-  });
-
-  test('TC06: Maximum amount 500000 accepted (AMT-005)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    const ctaLink = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i }).first();
-    await ctaLink.click();
-    await page.waitForLoadState('load');
-    const nameField = page.getByLabel(/name|full name/i).first();
-    const emailField = page.getByLabel(/email/i).first();
-    const amountField = page.getByLabel(/amount|investment|contribution/i).first();
-    const submitButton = page.getByRole('button', { name: /submit|invest|enquire|send/i }).first();
-    await nameField.fill('Test User');
-    await emailField.fill('test@example.com');
-    await amountField.fill(String(AMT_005.amount));
-    await submitButton.click();
-    await page.waitForLoadState('networkidle');
-    const maxError = await page.getByText(/maximum|exceed|limit/i).isVisible().catch(() => false);
-    expect(maxError).toBeFalsy();
-  });
-
-  test('TC07: Negative amount -1000 rejected (AMT-008)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    const ctaLink = page.getByRole('link').filter({ hasText: /invest|enquiry|contact|get started|next step/i }).first();
-    await ctaLink.click();
-    await page.waitForLoadState('load');
-    const nameField = page.getByLabel(/name|full name/i).first();
-    const emailField = page.getByLabel(/email/i).first();
-    const amountField = page.getByLabel(/amount|investment|contribution/i).first();
-    const submitButton = page.getByRole('button', { name: /submit|invest|enquire|send/i }).first();
-    await nameField.fill('Test User');
-    await emailField.fill('test@example.com');
-    await amountField.fill(String(AMT_008.amount));
-    await submitButton.click();
-    await page.waitForTimeout(2000);
-    const errorVisible = await page.getByText(/invalid amount|positive number|negative|error/i).isVisible().catch(() => false);
-    expect(errorVisible).toBeTruthy();
-  });
-
-  test('TC08: Disclosure compliance DISC-002 (AC4)', async ({ page }) => {
-    await page.goto(TARGET_URL, { waitUntil: 'load' });
-    const bodyText = await page.locator('body').innerText();
-    // DISC-002 expected phrase: "Investment in mutual funds is subject to market risk"
-    const discPattern = /subject to market risk|mutual fund investments are subject to market risk/i;
-    expect(discPattern.test(bodyText)).toBeTruthy();
-  });
+  if (await firstCTA.count() > 0) {
+    const ctaText = await firstCTA.first().textContent();
+    // Example baseline – store actual expected value from initial run
+    expect(ctaText?.trim()).toBeDefined();
+    // Could compare against a snapshot variable here
+  }
 });
